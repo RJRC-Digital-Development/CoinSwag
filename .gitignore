@@ -32,3 +32,5 @@ Thumbs.db
 # Temporary runtime files
 *.tmp
 temp/
+cloudflared.exe
+*.exe

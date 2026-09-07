@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: coinswag
+    runtime: node
+    plan: free
+    buildCommand: npm run build
+    startCommand: node server-prod.js
+    envVars:
+      - key: NODE_ENV
+        value: production
