@@ -15,14 +15,14 @@ async function testApi() {
   try {
     // 1. Health check
     const healthRes = await fetch(`${baseUrl}/health`);
-    const healthData = await healthRes.json();
+    const healthData: any = await healthRes.json();
     assert.strictEqual(healthData.status, 'ok');
     assert.strictEqual(healthData.kyc, 'STRICTLY_NO_KYC');
     console.log('  ✔ /health responded OK with Zero-KYC confirmation');
 
     // 2. GET /api/v1/assets
     const assetsRes = await fetch(`${baseUrl}/api/v1/assets`);
-    const assetsData = await assetsRes.json();
+    const assetsData: any = await assetsRes.json();
     assert(assetsData.assets.length >= 10, 'Must have at least 10 assets');
     const xmrAsset = assetsData.assets.find((a: any) => a.id === 'XMR');
     assert(xmrAsset && xmrAsset.isPrivacyHub, 'XMR must be designated as Privacy Hub');
@@ -39,7 +39,7 @@ async function testApi() {
         rateType: 'FLOAT'
       })
     });
-    const quoteData = await quoteRes.json();
+    const quoteData: any = await quoteRes.json();
     assert(quoteData.quote, 'Quote must be returned');
     assert.strictEqual(quoteData.quote.routeType, 'PRIVACY_HUB_DOUBLE');
     assert.deepStrictEqual(quoteData.quote.hops, ['BTC', 'XMR', 'SOL']);
@@ -57,7 +57,7 @@ async function testApi() {
         anonymizationDelaySeconds: 0
       })
     });
-    const swapData = await swapRes.json();
+    const swapData: any = await swapRes.json();
     assert(swapData.order, 'Order must be created');
     assert(swapData.order.depositAddress.startsWith('bc1q'), 'Must generate unique BTC deposit address');
     assert.strictEqual(swapData.order.status, 'AWAITING_DEPOSIT');
@@ -65,50 +65,50 @@ async function testApi() {
 
     // 5. POST /api/v1/swaps/:id/advance (Simulate deposit detection)
     const adv1 = await fetch(`${baseUrl}/api/v1/swaps/${swapData.order.id}/advance`, { method: 'POST' });
-    const adv1Data = await adv1.json();
+    const adv1Data: any = await adv1.json();
     assert.strictEqual(adv1Data.order.status, 'DEPOSIT_DETECTED');
     console.log('  ✔ Advanced order: DEPOSIT_DETECTED');
 
     // 6. POST /api/v1/swaps/:id/advance (Simulate deposit confirmed)
     const adv2 = await fetch(`${baseUrl}/api/v1/swaps/${swapData.order.id}/advance`, { method: 'POST' });
-    const adv2Data = await adv2.json();
+    const adv2Data: any = await adv2.json();
     assert.strictEqual(adv2Data.order.status, 'DEPOSIT_CONFIRMED');
     console.log('  ✔ Advanced order: DEPOSIT_CONFIRMED');
 
     // 7. Advance to HOP1_CONVERTING_TO_XMR
     const adv3 = await fetch(`${baseUrl}/api/v1/swaps/${swapData.order.id}/advance`, { method: 'POST' });
-    const adv3Data = await adv3.json();
+    const adv3Data: any = await adv3.json();
     assert.strictEqual(adv3Data.order.status, 'HOP1_CONVERTING_TO_XMR');
     console.log('  ✔ Advanced order: HOP1_CONVERTING_TO_XMR');
 
     // 8. Advance to XMR_RECEIVED_IN_HUB
     const adv4 = await fetch(`${baseUrl}/api/v1/swaps/${swapData.order.id}/advance`, { method: 'POST' });
-    const adv4Data = await adv4.json();
+    const adv4Data: any = await adv4.json();
     assert.strictEqual(adv4Data.order.status, 'XMR_RECEIVED_IN_HUB');
     console.log('  ✔ Advanced order: XMR_RECEIVED_IN_HUB (Traceability Broken)');
 
     // 9. Advance to HOP2_CONVERTING_TO_TARGET
     const adv5 = await fetch(`${baseUrl}/api/v1/swaps/${swapData.order.id}/advance`, { method: 'POST' });
-    const adv5Data = await adv5.json();
+    const adv5Data: any = await adv5.json();
     assert.strictEqual(adv5Data.order.status, 'HOP2_CONVERTING_TO_TARGET');
     console.log('  ✔ Advanced order: HOP2_CONVERTING_TO_TARGET');
 
     // 10. Advance to PAYOUT_BROADCASTING
     const adv6 = await fetch(`${baseUrl}/api/v1/swaps/${swapData.order.id}/advance`, { method: 'POST' });
-    const adv6Data = await adv6.json();
+    const adv6Data: any = await adv6.json();
     assert.strictEqual(adv6Data.order.status, 'PAYOUT_BROADCASTING');
     console.log('  ✔ Advanced order: PAYOUT_BROADCASTING');
 
     // 11. Advance to COMPLETED
     const adv7 = await fetch(`${baseUrl}/api/v1/swaps/${swapData.order.id}/advance`, { method: 'POST' });
-    const adv7Data = await adv7.json();
+    const adv7Data: any = await adv7.json();
     assert.strictEqual(adv7Data.order.status, 'COMPLETED');
     assert(adv7Data.order.payoutTxHash, 'Payout tx hash generated');
     console.log(`  ✔ Advanced order: COMPLETED with Payout Tx ${adv7Data.order.payoutTxHash}`);
 
     // 10. POST /api/v1/admin/janitor
     const janitorRes = await fetch(`${baseUrl}/api/v1/admin/janitor`, { method: 'POST' });
-    const janitorData = await janitorRes.json();
+    const janitorData: any = await janitorRes.json();
     assert(janitorData.message.includes('Zero-KYC Janitor executed'));
     console.log('  ✔ /api/v1/admin/janitor triggered successfully');
 

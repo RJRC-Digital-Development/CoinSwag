@@ -2,11 +2,46 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { TOP_ASSETS, CreateSplitQuoteRequest } from '@coinswag/core';
 import { OrderManager } from './services/order.manager';
+import {
+  securityHeadersMiddleware,
+  inputValidationMiddleware,
+  globalRateLimit,
+  quoteRateLimit,
+  orderRateLimit,
+  keyVaultRateLimit,
+  rateLimiterSentinel
+} from './security';
 
 export function createServer(orderManager: OrderManager = new OrderManager()) {
   const app = express();
+  app.disable('x-powered-by');
+  app.use(securityHeadersMiddleware);
   app.use(cors());
-  app.use(express.json());
+  app.use(
+    express.json({
+      limit: '1mb',
+      reviver: (key, value) => {
+        if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+          throw new Error(`Prototype pollution vector detected: forbidden key "${key}"`);
+        }
+        return value;
+      }
+    })
+  );
+
+  // Catch body-parser and reviver syntax/pollution errors
+  app.use((err: any, req: Request, res: Response, next: any) => {
+    if (err) {
+      return res.status(400).json({
+        error: 'Malicious payload rejected (Anti-Tampering Sentinel)',
+        reason: err.message
+      });
+    }
+    next();
+  });
+
+  app.use(inputValidationMiddleware);
+  app.use(globalRateLimit);
 
   // Health check
   app.get('/health', (req: Request, res: Response) => {
@@ -35,7 +70,7 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
   // ============================================================================
 
   // POST /api/v1/quotes - Calculate instant swap quote & competitive fees
-  app.post('/api/v1/quotes', (req: Request, res: Response) => {
+  app.post('/api/v1/quotes', quoteRateLimit, (req: Request, res: Response) => {
     try {
       const { fromAssetId, toAssetId, amountIn, rateType } = req.body;
       if (!fromAssetId || !toAssetId || !amountIn) {
@@ -55,7 +90,7 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
   });
 
   // POST /api/v1/swaps - Create new swap session with single-use deposit address
-  app.post('/api/v1/swaps', async (req: Request, res: Response) => {
+  app.post('/api/v1/swaps', orderRateLimit, async (req: Request, res: Response) => {
     try {
       const {
         quoteId,
@@ -146,7 +181,7 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
   // ============================================================================
 
   // POST /api/v1/splits/quote - Generate multi-destination split quote with fee tiers
-  app.post('/api/v1/splits/quote', (req: Request, res: Response) => {
+  app.post('/api/v1/splits/quote', quoteRateLimit, (req: Request, res: Response) => {
     try {
       const { fromAssetId, amountIn, destinations, autoGenerateKeys } = req.body;
       if (!fromAssetId || !amountIn || !destinations || !Array.isArray(destinations)) {
@@ -175,7 +210,7 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
   });
 
   // POST /api/v1/splits/create - Initialize split order and time-release vault
-  app.post('/api/v1/splits/create', async (req: Request, res: Response) => {
+  app.post('/api/v1/splits/create', orderRateLimit, async (req: Request, res: Response) => {
     try {
       const { quoteId, refundAddress } = req.body;
       if (!quoteId || !refundAddress) {
@@ -199,18 +234,24 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
   });
 
   // GET /api/v1/splits/:id/keys - Secure Zero-KYC download of generated private keys
-  app.get('/api/v1/splits/:id/keys', (req: Request, res: Response) => {
+  app.get('/api/v1/splits/:id/keys', keyVaultRateLimit, (req: Request, res: Response) => {
+    const clientIp = rateLimiterSentinel.getClientIp(req);
     try {
       const secretToken = (req.query.secretToken as string) || (req.headers['x-secret-token'] as string);
+      const passphrase = (req.query.passphrase as string) || (req.headers['x-vault-passphrase'] as string);
+
       if (!secretToken) {
+        rateLimiterSentinel.recordSecurityFailure(clientIp);
         return res.status(401).json({ error: 'Missing secret order authorization token' });
       }
 
-      const exportData = orderManager.downloadOrderKeys(req.params.id, secretToken);
+      const exportData = orderManager.downloadOrderKeys(req.params.id, secretToken, passphrase);
       res.setHeader('Content-Type', 'application/json');
       res.setHeader('Content-Disposition', `attachment; filename="coinswag-keyvault-${req.params.id}.json"`);
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
       res.json(exportData);
     } catch (err: any) {
+      rateLimiterSentinel.recordSecurityFailure(clientIp);
       res.status(400).json({ error: err.message });
     }
   });
@@ -295,6 +336,53 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
   app.post('/api/v1/admin/janitor', (req: Request, res: Response) => {
     const purgedCount = orderManager.runZeroKycJanitor();
     res.json({ message: `Zero-KYC Janitor executed. Purged ${purgedCount} orders.` });
+  });
+
+  // ============================================================================
+  // Financial Sentinel & Circuit Breaker Control
+  // ============================================================================
+
+  // GET /api/v1/sentinel/status - Query financial circuit breaker and intrusion status
+  app.get('/api/v1/sentinel/status', (req: Request, res: Response) => {
+    const clientIp = rateLimiterSentinel.getClientIp(req);
+    const cbStatus = orderManager.getCircuitBreaker().getStatus();
+    const jailStatus = rateLimiterSentinel.isJailed(clientIp);
+
+    res.json({
+      sentinel: 'CoinSwag Financial & Network Threat Sentinel',
+      status: cbStatus.isHalted ? 'EMERGENCY_HALTED' : 'ARMED_AND_ACTIVE',
+      circuitBreaker: cbStatus,
+      clientStatus: {
+        ip: clientIp,
+        jailed: jailStatus.jailed,
+        remainingSeconds: jailStatus.remainingSeconds
+      }
+    });
+  });
+
+  // POST /api/v1/sentinel/trip - Operator emergency kill switch
+  app.post('/api/v1/sentinel/trip', (req: Request, res: Response) => {
+    const reason = req.body.reason || 'Manual operator emergency engagement';
+    orderManager.getCircuitBreaker().trip(reason);
+    res.json({
+      message: '🚨 Financial Circuit Breaker engaged. All crypto outflows halted immediately.',
+      status: orderManager.getCircuitBreaker().getStatus()
+    });
+  });
+
+  // POST /api/v1/sentinel/reset - Operator manual resumption switch
+  app.post('/api/v1/sentinel/reset', (req: Request, res: Response) => {
+    orderManager.getCircuitBreaker().reset();
+    res.json({
+      message: '🛡️ Financial Circuit Breaker safely reset. Outflows resumed in CLOSED state.',
+      status: orderManager.getCircuitBreaker().getStatus()
+    });
+  });
+
+  // POST /api/v1/sentinel/reset-jail - Operator manual unban
+  app.post('/api/v1/sentinel/reset-jail', (req: Request, res: Response) => {
+    rateLimiterSentinel.resetJail(req.body?.ip);
+    res.json({ message: req.body?.ip ? `IP ${req.body.ip} unbanned` : 'All rate-limiter jails reset' });
   });
 
   return { app, orderManager };

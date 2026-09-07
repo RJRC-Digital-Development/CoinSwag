@@ -122,15 +122,15 @@ async function runTests() {
     // 7. Advance Order Execution & Time-Lock Vault Simulation
     console.log('\n--- 7. Testing Split Order Lifecycle Progression ---');
     // Step 1: Deposit Detected
-    const adv1 = await (await fetch(`${baseUrl}/api/v1/splits/${orderId}/advance`, { method: 'POST' })).json();
+    const adv1: any = await (await fetch(`${baseUrl}/api/v1/splits/${orderId}/advance`, { method: 'POST' })).json();
     assert(adv1.order.status === 'DEPOSIT_DETECTED', 'Transitioned to DEPOSIT_DETECTED');
 
     // Step 2: Deposit Confirmed
-    const adv2 = await (await fetch(`${baseUrl}/api/v1/splits/${orderId}/advance`, { method: 'POST' })).json();
+    const adv2: any = await (await fetch(`${baseUrl}/api/v1/splits/${orderId}/advance`, { method: 'POST' })).json();
     assert(adv2.order.status === 'DEPOSIT_CONFIRMED', 'Transitioned to DEPOSIT_CONFIRMED');
 
     // Step 3: Converted in Monero Privacy Hub and locked into time-release vault
-    const adv3 = await (await fetch(`${baseUrl}/api/v1/splits/${orderId}/advance`, { method: 'POST' })).json();
+    const adv3: any = await (await fetch(`${baseUrl}/api/v1/splits/${orderId}/advance`, { method: 'POST' })).json();
     assert(
       adv3.order.status === 'TIME_LOCK_HOLDING' || adv3.order.status === 'PARTIALLY_RELEASED',
       `Funds in Zero-Knowledge Vault: ${adv3.order.status}`

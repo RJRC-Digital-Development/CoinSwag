@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "build": "npm run build --workspace=@coinswag/core && npm run build --workspace=@coinswag/blockchain && npm run build --workspace=@coinswag/liquidity && npm run build --workspace=@coinswag/api && npm run build --workspace=@coinswag/bot && npm run build --workspace=@coinswag/web",
-    "test": "npm run test:core && npm run test:split && npm run test:failover && npm run test:tor && npm run test:bot && npm run test:mempool && npm run test:sweeper && npm run test:thorchain && npm run test:api",
+    "test": "npm run test:core && npm run test:split && npm run test:failover && npm run test:tor && npm run test:bot && npm run test:mempool && npm run test:sweeper && npm run test:thorchain && npm run test:api && npm run test:security",
     "test:core": "node packages/core/dist/test-suite.js",
     "test:split": "node packages/core/dist/test-split.js && node apps/api/dist/test-split-api.js",
     "test:failover": "node packages/blockchain/dist/test-failover.js",
@@ -19,6 +19,7 @@
     "test:sweeper": "node packages/liquidity/dist/test-fee-sweeper.js",
     "test:thorchain": "node packages/liquidity/dist/test-thorchain.js",
     "test:api": "node apps/api/dist/test-api.js",
+    "test:security": "node packages/core/dist/test-security.js && node apps/api/dist/test-security-suite.js",
 
     "start:bot": "node apps/bot/dist/index.js",
     "prod:start": "npx pm2 start ecosystem.config.cjs",

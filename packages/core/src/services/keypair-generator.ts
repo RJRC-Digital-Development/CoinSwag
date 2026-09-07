@@ -217,4 +217,18 @@ export class KeypairGeneratorService {
       }))
     };
   }
+
+  /**
+   * Formats and encrypts generated keypairs into an authenticated AES-256-GCM vault bundle.
+   */
+  public static formatEncryptedKeyVaultExport(
+    orderId: string,
+    secretToken: string,
+    keypairs: GeneratedKeypair[],
+    passphrase: string
+  ) {
+    const rawVault = this.formatKeyVaultExport(orderId, secretToken, keypairs);
+    const { VaultCipher } = require('../security/vault-cipher');
+    return VaultCipher.encryptVault(rawVault, passphrase);
+  }
 }

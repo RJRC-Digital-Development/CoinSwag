@@ -12,9 +12,10 @@ import {
   SplitDestination,
   CreateSplitQuoteRequest,
   SplitFeeCalculatorService,
-  KeypairGeneratorService
+  KeypairGeneratorService,
+  MemoryScrubber
 } from '@coinswag/core';
-import { BlockchainAdapterRegistry } from '@coinswag/blockchain';
+import { BlockchainAdapterRegistry, FinancialCircuitBreaker } from '@coinswag/blockchain';
 import {
   SwapRouter,
   SplitRouter,
@@ -25,6 +26,7 @@ import {
   FeeSweeperService
 } from '@coinswag/liquidity';
 import { TimeReleaseManager } from './time-release.manager';
+import { TimingSafeEqual } from '../security/timing-safe';
 
 export class OrderManager {
   private orders: Map<string, SwapOrder> = new Map();
@@ -42,6 +44,7 @@ export class OrderManager {
   private splitRouter: SplitRouter;
   private feeSweeper: FeeSweeperService;
   private timeReleaseManager: TimeReleaseManager;
+  private circuitBreaker: FinancialCircuitBreaker;
 
   private listeners: Map<string, Set<(order: SwapOrder) => void>> = new Map();
   private splitListeners: Map<string, Set<(order: SplitOrder) => void>> = new Map();
@@ -51,6 +54,7 @@ export class OrderManager {
     this.feeCalculator = new FeeCalculatorService(this.priceFeed);
     this.splitCalculator = new SplitFeeCalculatorService(this.priceFeed);
     this.registry = new BlockchainAdapterRegistry();
+    this.circuitBreaker = new FinancialCircuitBreaker();
 
     const internalPool = new InternalPoolProvider(this.priceFeed);
     const thorchain = new ThorchainProvider(this.priceFeed);
@@ -94,6 +98,10 @@ export class OrderManager {
 
   public getTimeReleaseManager(): TimeReleaseManager {
     return this.timeReleaseManager;
+  }
+
+  public getCircuitBreaker(): FinancialCircuitBreaker {
+    return this.circuitBreaker;
   }
 
   // ============================================================================
@@ -254,10 +262,22 @@ export class OrderManager {
       }
       case 'PAYOUT_BROADCASTING': {
         const payoutAmount = updated.actualPayoutAmount || updated.quote.estimatedAmountOut;
-        const payoutResult = await this.router.dispatchPayout(updated, payoutAmount);
-        updated.payoutTxHash = payoutResult.txHash;
-        updated = SwapStateMachine.transition(updated, 'COMPLETED');
-        await this.feeSweeper.recordFee(updated);
+        const toAsset = updated.quote.toAsset;
+        const assetPrice = this.priceFeed.getPriceUsd(toAsset.id);
+        const usdValue = payoutAmount * assetPrice;
+
+        // Sentinel: Evaluate velocity limit & hot wallet drain circuit breaker
+        this.circuitBreaker.authorizeOutflow(toAsset.id, payoutAmount, usdValue, updated.destinationAddress);
+
+        try {
+          const payoutResult = await this.router.dispatchPayout(updated, payoutAmount);
+          updated.payoutTxHash = payoutResult.txHash;
+          updated = SwapStateMachine.transition(updated, 'COMPLETED');
+          await this.feeSweeper.recordFee(updated);
+        } catch (err: any) {
+          this.circuitBreaker.recordBroadcastFailure(err.message);
+          throw err;
+        }
         break;
       }
       default:
@@ -369,10 +389,12 @@ export class OrderManager {
     }
   }
 
-  public downloadOrderKeys(orderId: string, secretToken: string): any {
+  public downloadOrderKeys(orderId: string, secretToken: string, vaultPassphrase?: string): any {
     const order = this.splitOrders.get(orderId);
     if (!order) throw new Error(`Order ${orderId} not found`);
-    if (order.secretToken !== secretToken) throw new Error('Unauthorized: Invalid secret order token');
+    if (!TimingSafeEqual.compare(order.secretToken, secretToken)) {
+      throw new Error('Unauthorized: Invalid secret order token');
+    }
 
     const keypairs = order.destinations
       .filter(d => d.generatedKeypair)
@@ -383,6 +405,9 @@ export class OrderManager {
     }
 
     order.keyVaultExported = true;
+    if (vaultPassphrase) {
+      return KeypairGeneratorService.formatEncryptedKeyVaultExport(order.id, order.secretToken, keypairs, vaultPassphrase);
+    }
     return KeypairGeneratorService.formatKeyVaultExport(order.id, order.secretToken, keypairs);
   }
 
@@ -448,6 +473,9 @@ export class OrderManager {
         const isExpired = order.status === 'EXPIRED' || (order.status === 'AWAITING_DEPOSIT' && now > order.expiresAt);
 
         if (isCompletedAndOld || isExpired) {
+          if (order.destinationAddress) MemoryScrubber.scrubSensitiveString(order.destinationAddress);
+          if (order.refundAddress) MemoryScrubber.scrubSensitiveString(order.refundAddress);
+          if (order.depositAddress) MemoryScrubber.scrubSensitiveString(order.depositAddress);
           const shredded = SwapStateMachine.shredMetadata(order);
           this.orders.set(id, shredded);
           purgedCount++;
@@ -465,13 +493,27 @@ export class OrderManager {
         if (isCompletedAndOld || isExpired) {
           splitOrder.metadataPurged = true;
           splitOrder.purgedAt = now;
+
+          // Perform 3-pass DoD zeroization on memory
+          if (splitOrder.depositAddress) MemoryScrubber.scrubSensitiveString(splitOrder.depositAddress);
+          if (splitOrder.refundAddress) MemoryScrubber.scrubSensitiveString(splitOrder.refundAddress);
+          if (splitOrder.secretToken) MemoryScrubber.scrubSensitiveString(splitOrder.secretToken);
+
           splitOrder.depositAddress = 'SHREDDED_ZERO_KYC';
           splitOrder.refundAddress = 'SHREDDED_ZERO_KYC';
+          splitOrder.secretToken = 'SHREDDED_ZERO_KYC';
+
           splitOrder.destinations.forEach(d => {
+            if (d.address) MemoryScrubber.scrubSensitiveString(d.address);
             d.address = 'SHREDDED_ZERO_KYC';
             if (d.generatedKeypair) {
+              if (d.generatedKeypair.privateKey) MemoryScrubber.scrubSensitiveString(d.generatedKeypair.privateKey);
+              if (d.generatedKeypair.mnemonic) MemoryScrubber.scrubSensitiveString(d.generatedKeypair.mnemonic);
+              if (d.generatedKeypair.address) MemoryScrubber.scrubSensitiveString(d.generatedKeypair.address);
+              MemoryScrubber.scrubObject(d.generatedKeypair);
               d.generatedKeypair.privateKey = 'SHREDDED_ZERO_KYC';
               d.generatedKeypair.mnemonic = 'SHREDDED_ZERO_KYC';
+              d.generatedKeypair.address = 'SHREDDED_ZERO_KYC';
             }
           });
           purgedCount++;

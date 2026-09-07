@@ -1,5 +1,6 @@
 import { SplitOrder, SplitDestination } from '@coinswag/core';
 import { SplitRouter } from '@coinswag/liquidity';
+import { TimingSafeEqual } from '../security/timing-safe';
 
 export interface ScheduledReleaseItem {
   orderId: string;
@@ -108,7 +109,7 @@ export class TimeReleaseManager {
     if (!order) {
       throw new Error(`Split order ${orderId} not found`);
     }
-    if (order.secretToken !== secretToken) {
+    if (!TimingSafeEqual.compare(order.secretToken, secretToken)) {
       throw new Error('Unauthorized: Invalid secret order token');
     }
 

@@ -9,3 +9,5 @@ export * from './services/split-fee-calculator';
 export * from './services/keypair-generator';
 export * from './services/address-validator';
 export * from './state/swap-state-machine';
+export * from './security/memory-scrubber';
+export * from './security/vault-cipher';

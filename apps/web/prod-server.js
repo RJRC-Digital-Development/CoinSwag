@@ -19,6 +19,25 @@ const MIME_TYPES = {
 };
 
 const server = http.createServer((req, res) => {
+  // Apply standard production security headers
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' *; frame-ancestors 'none';"
+  );
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
+  res.removeHeader('X-Powered-By');
+
+  // Guard against oversized payloads
+  const contentLength = parseInt(req.headers['content-length'] || '0', 10);
+  if (contentLength > 10 * 1024 * 1024) { // 10MB limit
+    res.writeHead(413, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Payload Too Large (Sentinel Shield)' }));
+    return;
+  }
+
   // 1. Proxy API requests to backend API server
   if (req.url.startsWith('/api/') || req.url.startsWith('/health')) {
     const options = {
@@ -26,7 +45,10 @@ const server = http.createServer((req, res) => {
       port: API_PORT,
       path: req.url,
       method: req.method,
-      headers: req.headers
+      headers: {
+        ...req.headers,
+        'x-forwarded-for': req.socket.remoteAddress
+      }
     };
 
     const proxyReq = http.request(options, proxyRes => {
@@ -59,7 +81,7 @@ const server = http.createServer((req, res) => {
     } else {
       res.writeHead(200, {
         'Content-Type': contentType,
-        'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=31536000, immutable'
+        'Cache-Control': ext === '.html' ? 'no-cache, no-store, must-revalidate' : 'public, max-age=31536000, immutable'
       });
       res.end(content, 'utf-8');
     }

@@ -9,5 +9,4 @@ export * from './services/rpc-failover.service';
 export * from './services/tor-proxy.service';
 export * from './services/mempool-estimator.service';
 export * from './registry';
-
-
+export * from './security/circuit-breaker';
