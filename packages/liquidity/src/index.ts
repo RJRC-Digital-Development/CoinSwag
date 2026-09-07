@@ -4,4 +4,5 @@ export * from './external-bridge.provider';
 export * from './thorchain.provider';
 export * from './simulator.provider';
 export * from './router';
+export * from './split-router';
 export * from './fee-sweeper';

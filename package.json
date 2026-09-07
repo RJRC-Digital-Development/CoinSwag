@@ -9,8 +9,9 @@
   ],
   "scripts": {
     "build": "npm run build --workspace=@coinswag/core && npm run build --workspace=@coinswag/blockchain && npm run build --workspace=@coinswag/liquidity && npm run build --workspace=@coinswag/api && npm run build --workspace=@coinswag/bot && npm run build --workspace=@coinswag/web",
-    "test": "npm run test:core && npm run test:failover && npm run test:tor && npm run test:bot && npm run test:mempool && npm run test:sweeper && npm run test:thorchain && npm run test:api",
+    "test": "npm run test:core && npm run test:split && npm run test:failover && npm run test:tor && npm run test:bot && npm run test:mempool && npm run test:sweeper && npm run test:thorchain && npm run test:api",
     "test:core": "node packages/core/dist/test-suite.js",
+    "test:split": "node packages/core/dist/test-split.js && node apps/api/dist/test-split-api.js",
     "test:failover": "node packages/blockchain/dist/test-failover.js",
     "test:tor": "node packages/blockchain/dist/test-tor.js",
     "test:bot": "node apps/bot/dist/test-bot.js",

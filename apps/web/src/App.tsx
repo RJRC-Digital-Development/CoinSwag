@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { SwapWidget } from './components/SwapWidget';
+import { SplitSwapWidget } from './components/SplitSwapWidget';
 import { SwapStatusModal } from './components/SwapStatusModal';
+import { SplitStatusModal } from './components/SplitStatusModal';
 import { OperatorDrawer } from './components/OperatorDrawer';
 import { TokenItem } from './components/TokenSelectorModal';
-import { Shield, Lock, Zap, RefreshCw, Cpu, Layers } from 'lucide-react';
+import { Shield, Lock, Zap, RefreshCw, Layers, Clock } from 'lucide-react';
 
 export const App: React.FC = () => {
   const [tokens, setTokens] = useState<TokenItem[]>([]);
   const [activeOrder, setActiveOrder] = useState<any | null>(null);
   const [isLoadingTokens, setIsLoadingTokens] = useState(true);
   const [isOperatorOpen, setIsOperatorOpen] = useState(false);
-
+  const [swapMode, setSwapMode] = useState<'single' | 'split'>('single');
 
   // Fetch supported tokens from API
   useEffect(() => {
@@ -31,9 +33,9 @@ export const App: React.FC = () => {
     loadAssets();
   }, []);
 
-  // Listen to SSE live updates when an order is active
+  // Listen to SSE live updates when a standard swap order is active
   useEffect(() => {
-    if (!activeOrder) return;
+    if (!activeOrder || activeOrder.id?.startsWith('split_')) return;
     const sse = new EventSource(`/api/v1/swaps/${activeOrder.id}/stream`);
 
     sse.onmessage = (event) => {
@@ -52,7 +54,10 @@ export const App: React.FC = () => {
 
   const handleAdvanceStep = async (orderId: string) => {
     try {
-      const res = await fetch(`/api/v1/swaps/${orderId}/advance`, { method: 'POST' });
+      const endpoint = orderId.startsWith('split_')
+        ? `/api/v1/splits/${orderId}/advance`
+        : `/api/v1/swaps/${orderId}/advance`;
+      const res = await fetch(endpoint, { method: 'POST' });
       const data = await res.json();
       if (data.order) {
         setActiveOrder(data.order);
@@ -78,7 +83,7 @@ export const App: React.FC = () => {
     <div className="min-h-screen flex flex-col justify-between">
       <Navbar onOpenOperatorDrawer={() => setIsOperatorOpen(true)} />
 
-      <main className="flex-1 max-w-6xl mx-auto px-4 py-8 sm:py-12 w-full space-y-12">
+      <main className="flex-1 max-w-6xl mx-auto px-4 py-8 sm:py-12 w-full space-y-10">
         {/* Hero Section */}
         <div className="text-center space-y-3 max-w-2xl mx-auto">
           <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-[#FF6600]/10 border border-[#FF6600]/30 text-[#FF6600] text-xs font-mono font-bold tracking-wide">
@@ -98,16 +103,52 @@ export const App: React.FC = () => {
           </p>
         </div>
 
+        {/* Mode Selector Tabs */}
+        <div className="flex justify-center">
+          <div className="bg-slate-900/90 border border-slate-800 p-1 rounded-2xl inline-flex space-x-1 shadow-lg">
+            <button
+              type="button"
+              onClick={() => setSwapMode('single')}
+              className={`px-4 sm:px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center space-x-2 cursor-pointer ${
+                swapMode === 'single'
+                  ? 'bg-gradient-to-r from-[#FF6600] to-amber-500 text-slate-950 shadow-md'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Zap className="w-4 h-4" />
+              <span>Instant Privacy Swap (0.45% / 0.75%)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSwapMode('split')}
+              className={`px-4 sm:px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center space-x-2 cursor-pointer ${
+                swapMode === 'split'
+                  ? 'bg-gradient-to-r from-[#FF6600] to-amber-500 text-slate-950 shadow-md'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Layers className="w-4 h-4" />
+              <span>Address Split & Time-Lock (Up to 1 Month)</span>
+            </button>
+          </div>
+        </div>
+
         {/* Swap Engine Main Widget */}
         {isLoadingTokens ? (
           <div className="flex flex-col items-center justify-center p-16 space-y-3">
             <RefreshCw className="w-8 h-8 text-[#FF6600] animate-spin" />
             <p className="text-xs font-mono text-slate-500">Connecting to CoinSwag Decentralized Hub...</p>
           </div>
-        ) : (
+        ) : swapMode === 'single' ? (
           <SwapWidget
             tokens={tokens}
             onOrderCreated={(order) => setActiveOrder(order)}
+          />
+        ) : (
+          <SplitSwapWidget
+            tokens={tokens}
+            onSplitOrderCreated={(order) => setActiveOrder(order)}
           />
         )}
 
@@ -124,22 +165,22 @@ export const App: React.FC = () => {
           </div>
 
           <div className="p-5 rounded-2xl bg-[#121620] border border-[#262D3D] space-y-2">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
-              <Zap className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center">
+              <Clock className="w-5 h-5" />
             </div>
-            <h3 className="font-bold text-white text-base">Competitive Pricing</h3>
+            <h3 className="font-bold text-white text-base">Time-Release Vaults</h3>
             <p className="text-xs text-slate-400 leading-relaxed font-sans">
-              Single hops at 0.45% and full double-hop privacy routes at 0.75% all-in. Beats industry competitors charging 1.0% to 1.8%.
+              Split output across unlimited addresses with scheduled release dates up to 30 days. Optional zero-knowledge private key generation for paper vault backups.
             </p>
           </div>
 
           <div className="p-5 rounded-2xl bg-[#121620] border border-[#262D3D] space-y-2">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
               <Layers className="w-5 h-5" />
             </div>
-            <h3 className="font-bold text-white text-base">Top 10+ Native Blockchains</h3>
+            <h3 className="font-bold text-white text-base">Top 20+ Native Blockchains</h3>
             <p className="text-xs text-slate-400 leading-relaxed font-sans">
-              Native support for Bitcoin, Ethereum, Monero, Solana, USDT, USDC, BNB, Ripple, Litecoin, and Dogecoin with automatic mempool monitoring.
+              Native support for Bitcoin, Ethereum, Monero, Solana, USDT, USDC, BNB, Ripple, Litecoin, Avalanche, Polygon, and Dogecoin.
             </p>
           </div>
         </div>
@@ -147,12 +188,20 @@ export const App: React.FC = () => {
 
       {/* Active Swap Modal */}
       {activeOrder && (
-        <SwapStatusModal
-          order={activeOrder}
-          onClose={() => setActiveOrder(null)}
-          onAdvanceStep={handleAdvanceStep}
-          onAutoComplete={handleAutoComplete}
-        />
+        activeOrder.id?.startsWith('split_') ? (
+          <SplitStatusModal
+            order={activeOrder}
+            onClose={() => setActiveOrder(null)}
+            onAdvanceStep={handleAdvanceStep}
+          />
+        ) : (
+          <SwapStatusModal
+            order={activeOrder}
+            onClose={() => setActiveOrder(null)}
+            onAdvanceStep={handleAdvanceStep}
+            onAutoComplete={handleAutoComplete}
+          />
+        )
       )}
 
       {/* Operator Drawer */}
@@ -168,4 +217,3 @@ export const App: React.FC = () => {
     </div>
   );
 };
-

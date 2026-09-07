@@ -6,31 +6,50 @@ import {
   FeeCalculatorService,
   PriceFeedService,
   ASSET_MAP,
-  AddressValidator
+  AddressValidator,
+  SplitOrder,
+  SplitQuote,
+  SplitDestination,
+  CreateSplitQuoteRequest,
+  SplitFeeCalculatorService,
+  KeypairGeneratorService
 } from '@coinswag/core';
 import { BlockchainAdapterRegistry } from '@coinswag/blockchain';
 import {
   SwapRouter,
+  SplitRouter,
   InternalPoolProvider,
   SimulatorProvider,
   ExternalBridgeProvider,
   ThorchainProvider,
   FeeSweeperService
 } from '@coinswag/liquidity';
+import { TimeReleaseManager } from './time-release.manager';
 
 export class OrderManager {
   private orders: Map<string, SwapOrder> = new Map();
   private quoteCache: Map<string, SwapQuote> = new Map();
+
+  // Split & Time-Release Storage
+  private splitOrders: Map<string, SplitOrder> = new Map();
+  private splitQuoteCache: Map<string, SplitQuote> = new Map();
+
   private priceFeed: PriceFeedService;
   private feeCalculator: FeeCalculatorService;
+  private splitCalculator: SplitFeeCalculatorService;
   private registry: BlockchainAdapterRegistry;
   private router: SwapRouter;
+  private splitRouter: SplitRouter;
   private feeSweeper: FeeSweeperService;
+  private timeReleaseManager: TimeReleaseManager;
+
   private listeners: Map<string, Set<(order: SwapOrder) => void>> = new Map();
+  private splitListeners: Map<string, Set<(order: SplitOrder) => void>> = new Map();
 
   constructor() {
     this.priceFeed = new PriceFeedService();
     this.feeCalculator = new FeeCalculatorService(this.priceFeed);
+    this.splitCalculator = new SplitFeeCalculatorService(this.priceFeed);
     this.registry = new BlockchainAdapterRegistry();
 
     const internalPool = new InternalPoolProvider(this.priceFeed);
@@ -38,11 +57,19 @@ export class OrderManager {
     const bridge = new ExternalBridgeProvider(this.priceFeed);
     const simulator = new SimulatorProvider(this.priceFeed);
 
-    this.router = new SwapRouter(this.registry, [internalPool, thorchain, bridge, simulator]);
+    const providers = [internalPool, thorchain, bridge, simulator];
+    this.router = new SwapRouter(this.registry, providers);
+    this.splitRouter = new SplitRouter(this.registry, providers);
     this.feeSweeper = new FeeSweeperService(this.priceFeed, this.registry);
 
+    this.timeReleaseManager = new TimeReleaseManager(this.splitRouter, (updatedSplit) => {
+      this.splitOrders.set(updatedSplit.id, updatedSplit);
+      this.notifySplit(updatedSplit);
+    });
+
     // Launch background janitor (runs every 60 seconds)
-    setInterval(() => this.runZeroKycJanitor(), 60000);
+    const janitorTimer = setInterval(() => this.runZeroKycJanitor(), 60000);
+    if (janitorTimer.unref) janitorTimer.unref();
   }
 
   public getPriceFeed(): PriceFeedService {
@@ -53,6 +80,10 @@ export class OrderManager {
     return this.feeCalculator;
   }
 
+  public getSplitCalculator(): SplitFeeCalculatorService {
+    return this.splitCalculator;
+  }
+
   public getRegistry(): BlockchainAdapterRegistry {
     return this.registry;
   }
@@ -61,9 +92,14 @@ export class OrderManager {
     return this.feeSweeper;
   }
 
-  /**
-   * Generates and stores an instant swap quote.
-   */
+  public getTimeReleaseManager(): TimeReleaseManager {
+    return this.timeReleaseManager;
+  }
+
+  // ============================================================================
+  // Single Swap Orders
+  // ============================================================================
+
   public createQuote(
     fromAssetId: string,
     toAssetId: string,
@@ -81,9 +117,6 @@ export class OrderManager {
     return quote;
   }
 
-  /**
-   * Creates a new Swap Order from an active quote.
-   */
   public async createOrder(
     quoteId: string,
     destinationAddress: string,
@@ -100,7 +133,6 @@ export class OrderManager {
       throw new Error(`Quote has expired. Please request a new quote.`);
     }
 
-    // Validate destination and refund addresses
     if (!AddressValidator.isValid(quote.toAsset.chain, destinationAddress)) {
       throw new Error(`Invalid payout address format for ${quote.toAsset.name}`);
     }
@@ -108,7 +140,6 @@ export class OrderManager {
       throw new Error(`Invalid emergency refund address format for ${quote.fromAsset.name}`);
     }
 
-    // Generate single-use deposit address
     const adapter = this.registry.getAdapter(quote.fromAsset.chain);
     const orderId = `swap_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
     const depositInfo = await adapter.generateDepositAddress(orderId);
@@ -130,7 +161,7 @@ export class OrderManager {
       status: 'AWAITING_DEPOSIT',
       statusMessage: SwapStateMachine.getDefaultMessage('AWAITING_DEPOSIT'),
       createdAt: Date.now(),
-      expiresAt: Date.now() + 3600 * 1000, // 1 hour deposit window
+      expiresAt: Date.now() + 3600 * 1000,
       metadataPurged: false
     };
 
@@ -143,9 +174,6 @@ export class OrderManager {
     return this.orders.get(orderId) || null;
   }
 
-  /**
-   * Subscribe to live SSE updates for an order.
-   */
   public subscribe(orderId: string, callback: (order: SwapOrder) => void): () => void {
     if (!this.listeners.has(orderId)) {
       this.listeners.set(orderId, new Set());
@@ -166,10 +194,6 @@ export class OrderManager {
     }
   }
 
-  /**
-   * Simulates/Advances an order through the Monero Privacy Hub pipeline.
-   * Useful for testing and sandbox execution.
-   */
   public async advanceOrderStep(orderId: string): Promise<SwapOrder> {
     const order = this.orders.get(orderId);
     if (!order) throw new Error(`Order ${orderId} not found`);
@@ -190,7 +214,6 @@ export class OrderManager {
         break;
       }
       case 'DEPOSIT_CONFIRMED': {
-        // If starting from XMR, skip Hop 1
         if (updated.quote.fromAsset.id === 'XMR') {
           updated = SwapStateMachine.transition(updated, 'HOP2_CONVERTING_TO_TARGET');
         } else {
@@ -199,7 +222,6 @@ export class OrderManager {
         break;
       }
       case 'HOP1_CONVERTING_TO_XMR': {
-        // Execute Hop 1
         const result = await this.router.executeHop1ToMonero(updated);
         updated.hops.push(result.hopDetails);
         updated = SwapStateMachine.transition(updated, 'XMR_RECEIVED_IN_HUB');
@@ -207,7 +229,6 @@ export class OrderManager {
       }
       case 'XMR_RECEIVED_IN_HUB': {
         if (updated.quote.toAsset.id === 'XMR') {
-          // If destination is XMR, payout directly
           updated = SwapStateMachine.transition(updated, 'PAYOUT_BROADCASTING');
         } else if (updated.anonymizationDelaySeconds > 0) {
           updated = SwapStateMachine.transition(updated, 'XMR_ANONYMIZING');
@@ -222,7 +243,6 @@ export class OrderManager {
         break;
       }
       case 'HOP2_CONVERTING_TO_TARGET': {
-        // Calculate intermediate XMR amount from hop 1 (or direct input)
         const hop1 = updated.hops.find(h => h.toAsset === 'XMR');
         const xmrAmount = hop1 ? (hop1.outputAmount || 0) : updated.quote.amountIn;
 
@@ -237,7 +257,6 @@ export class OrderManager {
         const payoutResult = await this.router.dispatchPayout(updated, payoutAmount);
         updated.payoutTxHash = payoutResult.txHash;
         updated = SwapStateMachine.transition(updated, 'COMPLETED');
-        // Automatically sweep or accumulate fee to external wallet
         await this.feeSweeper.recordFee(updated);
         break;
       }
@@ -250,9 +269,6 @@ export class OrderManager {
     return updated;
   }
 
-  /**
-   * Executes a full end-to-end swap simulation sequentially with real-time delays.
-   */
   public async simulateFullSwap(orderId: string, stepDelayMs: number = 800): Promise<SwapOrder> {
     let order = this.orders.get(orderId);
     if (!order) throw new Error(`Order ${orderId} not found`);
@@ -264,16 +280,168 @@ export class OrderManager {
     return order;
   }
 
-  /**
-   * Zero-KYC Janitor Worker:
-   * Permanently scrubs sensitive addresses and hashes once retention expires.
-   */
+  // ============================================================================
+  // Split & Time-Release Orders
+  // ============================================================================
+
+  public createSplitQuote(request: CreateSplitQuoteRequest): SplitQuote {
+    const quote = this.splitCalculator.generateSplitQuote(request);
+    this.splitQuoteCache.set(quote.id, quote);
+    return quote;
+  }
+
+  public async createSplitOrder(
+    quoteId: string,
+    refundAddress: string
+  ): Promise<SplitOrder> {
+    const quote = this.splitQuoteCache.get(quoteId);
+    if (!quote) {
+      throw new Error(`Split quote ${quoteId} not found or expired`);
+    }
+
+    if (Date.now() > quote.expiresAt) {
+      throw new Error(`Split quote has expired. Please request a new quote.`);
+    }
+
+    if (!AddressValidator.isValid(quote.fromAsset.chain, refundAddress)) {
+      throw new Error(`Invalid emergency refund address format for ${quote.fromAsset.name}`);
+    }
+
+    // Validate destination addresses
+    for (let i = 0; i < quote.destinations.length; i++) {
+      const dest = quote.destinations[i];
+      if (!AddressValidator.isValid(dest.targetAsset.chain, dest.address)) {
+        throw new Error(`Invalid destination address for ${dest.targetAsset.name}: ${dest.address}`);
+      }
+    }
+
+    const adapter = this.registry.getAdapter(quote.fromAsset.chain);
+    const orderId = `split_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    const depositInfo = await adapter.generateDepositAddress(orderId);
+    const secretToken = `sec_${Math.random().toString(36).substring(2, 16)}`;
+
+    const order: SplitOrder = {
+      id: orderId,
+      secretToken,
+      quote,
+      depositAddress: depositInfo.address,
+      depositExtraId: depositInfo.extraId,
+      depositConfirmations: 0,
+      requiredConfirmations: quote.fromAsset.confirmationsRequired,
+      refundAddress,
+      destinations: quote.destinations,
+      status: 'AWAITING_DEPOSIT',
+      statusMessage: 'Awaiting deposit from user to initiate address split and time-release vault.',
+      createdAt: Date.now(),
+      expiresAt: Date.now() + 3600 * 1000,
+      autoGenerateKeys: quote.autoGenerateKeys,
+      keyVaultExported: false,
+      metadataPurged: false
+    };
+
+    this.splitOrders.set(orderId, order);
+    this.timeReleaseManager.registerOrder(order);
+    this.notifySplit(order);
+    return order;
+  }
+
+  public getSplitOrder(orderId: string): SplitOrder | null {
+    return this.splitOrders.get(orderId) || null;
+  }
+
+  public subscribeSplit(orderId: string, callback: (order: SplitOrder) => void): () => void {
+    if (!this.splitListeners.has(orderId)) {
+      this.splitListeners.set(orderId, new Set());
+    }
+    this.splitListeners.get(orderId)!.add(callback);
+
+    return () => {
+      this.splitListeners.get(orderId)?.delete(callback);
+    };
+  }
+
+  private notifySplit(order: SplitOrder): void {
+    const callbacks = this.splitListeners.get(order.id);
+    if (callbacks) {
+      for (const cb of callbacks) {
+        try { cb(order); } catch (e) { /* ignore client disconnects */ }
+      }
+    }
+  }
+
+  public downloadOrderKeys(orderId: string, secretToken: string): any {
+    const order = this.splitOrders.get(orderId);
+    if (!order) throw new Error(`Order ${orderId} not found`);
+    if (order.secretToken !== secretToken) throw new Error('Unauthorized: Invalid secret order token');
+
+    const keypairs = order.destinations
+      .filter(d => d.generatedKeypair)
+      .map(d => d.generatedKeypair!);
+
+    if (keypairs.length === 0) {
+      throw new Error('No generated private keys found for this order (manual addresses were supplied).');
+    }
+
+    order.keyVaultExported = true;
+    return KeypairGeneratorService.formatKeyVaultExport(order.id, order.secretToken, keypairs);
+  }
+
+  public async advanceSplitOrderStep(orderId: string): Promise<SplitOrder> {
+    const order = this.splitOrders.get(orderId);
+    if (!order) throw new Error(`Split order ${orderId} not found`);
+
+    switch (order.status) {
+      case 'AWAITING_DEPOSIT':
+        order.status = 'DEPOSIT_DETECTED';
+        order.depositTxHash = `dep_split_${Math.random().toString(36).substring(2, 10)}`;
+        order.statusMessage = 'Deposit detected in mempool; awaiting block confirmations.';
+        break;
+
+      case 'DEPOSIT_DETECTED':
+        order.status = 'DEPOSIT_CONFIRMED';
+        order.depositConfirmations = order.requiredConfirmations;
+        order.actualDepositAmount = order.quote.amountIn;
+        order.statusMessage = 'Deposit confirmed. Ingesting into Monero Zero-Knowledge Privacy Hub.';
+        break;
+
+      case 'DEPOSIT_CONFIRMED': {
+        order.status = 'CONVERTING_IN_PRIVACY_HUB';
+        await this.splitRouter.executeHop1ToMonero(order);
+        await this.splitRouter.executeMoneroHubChurn(order.quote.amountIn);
+        
+        // Move to time-lock vault
+        order.status = 'TIME_LOCK_HOLDING';
+        order.statusMessage = 'Anonymized in Monero Hub. Split tranches secured in Time-Lock Vault.';
+        
+        // Immediately release 0-delay destinations
+        await this.timeReleaseManager.processMaturedReleases();
+        break;
+      }
+
+      case 'TIME_LOCK_HOLDING':
+      case 'PARTIALLY_RELEASED':
+        await this.timeReleaseManager.processMaturedReleases();
+        break;
+
+      default:
+        break;
+    }
+
+    this.splitOrders.set(orderId, order);
+    this.notifySplit(order);
+    return order;
+  }
+
+  // ============================================================================
+  // Zero-KYC Janitor Data Shredder
+  // ============================================================================
+
   public runZeroKycJanitor(): number {
     let purgedCount = 0;
     const now = Date.now();
-    // Retention window: 10 minutes after completion or 1 hour after expiration for ephemeral safety
     const COMPLETED_PURGE_WINDOW_MS = 10 * 60 * 1000; 
 
+    // Shred single-swap orders
     for (const [id, order] of this.orders.entries()) {
       if (!order.metadataPurged) {
         const isCompletedAndOld = order.completedAt && (now - order.completedAt > COMPLETED_PURGE_WINDOW_MS);
@@ -286,6 +454,31 @@ export class OrderManager {
         }
       }
     }
+
+    // Shred completed split orders
+    for (const [id, splitOrder] of this.splitOrders.entries()) {
+      if (!splitOrder.metadataPurged) {
+        const allReleased = splitOrder.destinations.every(d => d.status === 'RELEASED');
+        const isCompletedAndOld = splitOrder.completedAt && allReleased && (now - splitOrder.completedAt > COMPLETED_PURGE_WINDOW_MS);
+        const isExpired = splitOrder.status === 'EXPIRED' || (splitOrder.status === 'AWAITING_DEPOSIT' && now > splitOrder.expiresAt);
+
+        if (isCompletedAndOld || isExpired) {
+          splitOrder.metadataPurged = true;
+          splitOrder.purgedAt = now;
+          splitOrder.depositAddress = 'SHREDDED_ZERO_KYC';
+          splitOrder.refundAddress = 'SHREDDED_ZERO_KYC';
+          splitOrder.destinations.forEach(d => {
+            d.address = 'SHREDDED_ZERO_KYC';
+            if (d.generatedKeypair) {
+              d.generatedKeypair.privateKey = 'SHREDDED_ZERO_KYC';
+              d.generatedKeypair.mnemonic = 'SHREDDED_ZERO_KYC';
+            }
+          });
+          purgedCount++;
+        }
+      }
+    }
+
     return purgedCount;
   }
 }
