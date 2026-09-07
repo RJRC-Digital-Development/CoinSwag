@@ -1,0 +1,21 @@
+{
+  "name": "@coinswag/bot",
+  "version": "1.0.0",
+  "description": "Zero-KYC Telegram Bot for CoinSwag Monero Privacy Swaps",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "node dist/test-bot.js"
+  },
+  "dependencies": {
+    "@coinswag/core": "*",
+    "@coinswag/blockchain": "*",
+    "@coinswag/liquidity": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.7",
+    "typescript": "^5.4.5"
+  }
+}

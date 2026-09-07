@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(circle at 50% 0%, #1c2333 0%, #0b0e14 70%);
+  color: #f1f5f9;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0b0e14;
+}
+::-webkit-scrollbar-thumb {
+  background: #262d3d;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #ff6600;
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(255, 102, 0, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(255, 102, 0, 0.6);
+  }
+}
+
+.monero-glow {
+  animation: pulseGlow 3s infinite ease-in-out;
+}

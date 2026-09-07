@@ -1,0 +1,18 @@
+{
+  "name": "@coinswag/liquidity",
+  "version": "1.0.0",
+  "description": "Liquidity pool connectors, DEX routers, and Monero privacy hop dispatcher",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w"
+  },
+  "dependencies": {
+    "@coinswag/core": "*",
+    "@coinswag/blockchain": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  }
+}

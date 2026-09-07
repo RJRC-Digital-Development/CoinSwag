@@ -1,0 +1,17 @@
+{
+  "name": "@coinswag/core",
+  "version": "1.0.0",
+  "description": "Core domain logic, models, fee calculations, and state machines for CoinSwag",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w"
+  },
+  "dependencies": {
+    "bs58": "^6.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  }
+}
