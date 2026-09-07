@@ -519,6 +519,11 @@ export const SplitSwapWidget: React.FC<Props> = ({ tokens, onSplitOrderCreated }
         </span>
       </button>
 
+      {/* Non-Custodial Legal Notice */}
+      <p className="text-[11px] text-slate-500 text-center font-sans leading-relaxed pt-1">
+        By proceeding, you acknowledge CoinSwag is an autonomous non-custodial routing protocol. Generated keys are ephemeral and stored only in your downloaded vault.
+      </p>
+
       {/* Token Selector Modal */}
       {modalMode !== null && (
         <TokenSelectorModal

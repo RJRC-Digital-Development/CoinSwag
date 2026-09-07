@@ -28,6 +28,14 @@ async function testApi() {
     assert(xmrAsset && xmrAsset.isPrivacyHub, 'XMR must be designated as Privacy Hub');
     console.log(`  ✔ /api/v1/assets returned ${assetsData.assets.length} supported tokens`);
 
+    // 2b. GET /api/v1/legal/disclaimer
+    const legalRes = await fetch(`${baseUrl}/api/v1/legal/disclaimer`);
+    const legalData: any = await legalRes.json();
+    assert.strictEqual(legalData.custody, 'NON_CUSTODIAL');
+    assert.strictEqual(legalData.kycPolicy, 'ZERO_KYC_NO_LOGS');
+    assert(Array.isArray(legalData.keyDisclosures) && legalData.keyDisclosures.length >= 5);
+    console.log('  ✔ /api/v1/legal/disclaimer returned non-custodial disclosures & terms');
+
     // 3. POST /api/v1/quotes (BTC -> SOL via Monero Hub)
     const quoteRes = await fetch(`${baseUrl}/api/v1/quotes`, {
       method: 'POST',

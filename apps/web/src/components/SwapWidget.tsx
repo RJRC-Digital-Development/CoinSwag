@@ -377,6 +377,11 @@ export const SwapWidget: React.FC<Props> = ({ tokens, onOrderCreated }) => {
             </>
           )}
         </button>
+
+        {/* Legal Disclaimer Sub-text */}
+        <p className="text-[11px] text-slate-500 text-center mt-3 font-sans leading-relaxed">
+          By initiating a swap, you acknowledge CoinSwag is an autonomous, non-custodial software protocol. All blockchain transactions are final and irreversible.
+        </p>
       </div>
 
       {/* Real-time Fee Comparison Breakdown */}

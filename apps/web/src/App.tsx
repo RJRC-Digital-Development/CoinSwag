@@ -5,14 +5,16 @@ import { SplitSwapWidget } from './components/SplitSwapWidget';
 import { SwapStatusModal } from './components/SwapStatusModal';
 import { SplitStatusModal } from './components/SplitStatusModal';
 import { OperatorDrawer } from './components/OperatorDrawer';
+import { LegalDisclaimerModal } from './components/LegalDisclaimerModal';
 import { TokenItem } from './components/TokenSelectorModal';
-import { Shield, Lock, Zap, RefreshCw, Layers, Clock } from 'lucide-react';
+import { Shield, Lock, Zap, RefreshCw, Layers, Clock, Scale } from 'lucide-react';
 
 export const App: React.FC = () => {
   const [tokens, setTokens] = useState<TokenItem[]>([]);
   const [activeOrder, setActiveOrder] = useState<any | null>(null);
   const [isLoadingTokens, setIsLoadingTokens] = useState(true);
   const [isOperatorOpen, setIsOperatorOpen] = useState(false);
+  const [isLegalOpen, setIsLegalOpen] = useState(false);
   const [swapMode, setSwapMode] = useState<'single' | 'split'>('single');
 
   // Fetch supported tokens from API
@@ -81,7 +83,10 @@ export const App: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col justify-between">
-      <Navbar onOpenOperatorDrawer={() => setIsOperatorOpen(true)} />
+      <Navbar
+        onOpenOperatorDrawer={() => setIsOperatorOpen(true)}
+        onOpenLegalModal={() => setIsLegalOpen(true)}
+      />
 
       <main className="flex-1 max-w-6xl mx-auto px-4 py-8 sm:py-12 w-full space-y-10">
         {/* Hero Section */}
@@ -210,9 +215,35 @@ export const App: React.FC = () => {
         onClose={() => setIsOperatorOpen(false)}
       />
 
+      {/* Legal & Non-Custodial Protocol Modal */}
+      <LegalDisclaimerModal
+        isOpen={isLegalOpen}
+        onClose={() => setIsLegalOpen(false)}
+      />
+
       {/* Footer */}
-      <footer className="border-t border-[#262D3D] bg-[#0A0D14] py-6 px-4 text-center text-xs font-mono text-slate-500">
-        <p>CoinSwag Privacy Hub Engine • Automated Multi-Chain Decentralized Liquidity • No KYC Ever</p>
+      <footer className="border-t border-[#262D3D] bg-[#0A0D14] py-8 px-4 text-center text-xs font-sans text-slate-500 space-y-3">
+        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs">
+          <button
+            onClick={() => setIsLegalOpen(true)}
+            className="text-slate-400 hover:text-amber-400 flex items-center space-x-1.5 transition cursor-pointer"
+          >
+            <Scale className="w-3.5 h-3.5 text-amber-400" />
+            <span className="underline decoration-slate-700 underline-offset-4">Non-Custodial Protocol Notice & Terms</span>
+          </button>
+          <span className="text-slate-700">•</span>
+          <button
+            onClick={() => setIsLegalOpen(true)}
+            className="text-slate-400 hover:text-slate-200 transition cursor-pointer"
+          >
+            <span className="underline decoration-slate-700 underline-offset-4">Blockchain Risk Disclosures</span>
+          </button>
+          <span className="text-slate-700">•</span>
+          <span className="font-mono text-[11px] text-emerald-400/80">Strictly Zero-KYC • No Data Retention</span>
+        </div>
+        <p className="text-[11px] text-slate-600 font-mono">
+          CoinSwag is open-source algorithmic routing software. Software operators do not hold custody of funds.
+        </p>
       </footer>
     </div>
   );

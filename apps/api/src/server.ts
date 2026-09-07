@@ -65,6 +65,27 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
     res.json({ assets: assetsWithPrices });
   });
 
+  // GET /api/v1/legal/disclaimer - Autonomous non-custodial protocol disclosures & terms
+  app.get('/api/v1/legal/disclaimer', (req: Request, res: Response) => {
+    res.json({
+      protocol: 'CoinSwag Non-Custodial Autonomous Crypto Routing Protocol',
+      lastUpdated: 'September 2026',
+      custody: 'NON_CUSTODIAL',
+      kycPolicy: 'ZERO_KYC_NO_LOGS',
+      summary: 'CoinSwag is an open, autonomous non-custodial software protocol. All blockchain transactions are final and irreversible. Users maintain 100% unilateral custody and responsibility for their cryptographic keys, transactions, and legal compliance.',
+      keyDisclosures: [
+        'Non-custodial: CoinSwag never holds, manages, or custodies private keys or user funds.',
+        'Blockchain finality: All on-chain broadcasts are immutable and cannot be canceled, refunded, or reversed.',
+        'Zero-persistence: Generated split keypairs are ephemeral in volatile memory and wiped after TTL. Users must backup their own vaults.',
+        'Market risk: Cryptocurrency exchange rates fluctuate dynamically. Output amounts are subject to slippage and network miner fees.',
+        'Sanctions & AML: Strictly prohibited in OFAC/UN sanctioned territories (Cuba, Iran, North Korea, Syria, Crimea/Donetsk/Luhansk). Illicit usage strictly prohibited.',
+        'As-Is software: Protocol and code provided without warranties of any kind under applicable law.'
+      ],
+      legalDocumentUri: '/LEGAL.md',
+      acceptedByUsingService: true
+    });
+  });
+
   // ============================================================================
   // Standard Swap Endpoints
   // ============================================================================

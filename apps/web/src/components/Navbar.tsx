@@ -3,9 +3,10 @@ import { Shield, Zap, Lock, RefreshCw, Activity } from 'lucide-react';
 
 interface Props {
   onOpenOperatorDrawer?: () => void;
+  onOpenLegalModal?: () => void;
 }
 
-export const Navbar: React.FC<Props> = ({ onOpenOperatorDrawer }) => {
+export const Navbar: React.FC<Props> = ({ onOpenOperatorDrawer, onOpenLegalModal }) => {
   return (
     <nav className="w-full border-b border-[#262D3D] bg-[#0E131E]/80 backdrop-blur-md sticky top-0 z-40 px-4 lg:px-8 py-3.5">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -34,15 +35,21 @@ export const Navbar: React.FC<Props> = ({ onOpenOperatorDrawer }) => {
             <span>Strictly Zero-KYC</span>
           </div>
 
-          <div className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/30 text-orange-400 text-xs font-medium">
-            <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-            <span className="font-mono">XMR Hub Active</span>
-          </div>
+          {/* Legal / Non-Custodial Disclaimer Button */}
+          <button
+            onClick={onOpenLegalModal}
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-[#1A1F2C] hover:bg-slate-800 border border-amber-500/30 text-amber-400 hover:text-amber-300 text-xs font-medium transition cursor-pointer"
+            title="View Non-Custodial Protocol Legal Notice & Risk Disclosures"
+          >
+            <Shield className="w-3.5 h-3.5 text-amber-400" />
+            <span className="hidden sm:inline">Legal & Risk</span>
+            <span className="sm:hidden">Legal</span>
+          </button>
 
           {/* Interactive Remote Nodes & Fee Sweeper Button */}
           <button
             onClick={onOpenOperatorDrawer}
-            className="flex items-center space-x-2 px-3 py-1.5 rounded-full bg-[#1C2230] hover:bg-[#262D3D] border border-cyan-500/30 text-cyan-400 hover:text-cyan-300 text-xs font-mono transition group"
+            className="flex items-center space-x-2 px-3 py-1.5 rounded-full bg-[#1C2230] hover:bg-[#262D3D] border border-cyan-500/30 text-cyan-400 hover:text-cyan-300 text-xs font-mono transition group cursor-pointer"
             title="Open Operator Revenue & Remote Node Health Panel"
           >
             <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping group-hover:scale-125 transition" />
