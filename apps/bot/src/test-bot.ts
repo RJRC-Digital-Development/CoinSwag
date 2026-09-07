@@ -95,6 +95,22 @@ async function runTelegramBotVerificationSuite() {
   assert.ok(helpReply.text.includes('Zero-KYC Guarantee'), 'Should provide Zero-KYC guarantee');
   console.log('  ✔ /help verified Zero-KYC compliance');
 
+  // Test 7: Bitcoin Lightning Network swap
+  console.log('\n▶ Test 7: Testing Bitcoin Lightning Network swap session');
+  const xmrPayout = '888tNkZrPN6JsEgekjMnABU4TBzc2Dt29EPAvkFxbANsAnJYPbb3iQ1YBRk1UXCDRSiKc9dhwMVgN5S9cQUiyoogDavup3H';
+  const lnSwapReply = await bot.processIncomingMessage({
+    message_id: 7,
+    chat: { id: mockChatId, type: 'private' },
+    text: `/swap BTC_LN XMR 0.005 ${xmrPayout}`,
+    date: Math.floor(Date.now() / 1000)
+  });
+  assert.ok(lnSwapReply);
+  assert.ok(lnSwapReply.text.includes('Lightning Invoice'), 'Should generate Lightning invoice');
+  assert.ok(lnSwapReply.text.includes('0-Conf Instant'), 'Should state 0-conf instant');
+  assert.ok(lnSwapReply.text.includes('lightning:lnbc'), 'Should provide direct lightning: URI');
+  assert.ok(lnSwapReply.text.includes('500,000 sats'), 'Should display satoshis equivalent');
+  console.log('  ✔ Lightning swap generated BOLT11 invoice and 0-conf instant routing');
+
   console.log('\n🎉 ALL TELEGRAM BOT TESTS PASSED SUCCESSFULLY!\n');
 }
 

@@ -15,9 +15,10 @@ export type Blockchain =
   | 'cosmos'
   | 'near'
   | 'kaspa'
-  | 'ton';
+  | 'ton'
+  | 'lightning';
 
-export type TokenStandard = 'native' | 'erc20' | 'spl' | 'bep20' | 'trc20';
+export type TokenStandard = 'native' | 'erc20' | 'spl' | 'bep20' | 'trc20' | 'lightning';
 
 export interface Asset {
   id: string;                      // e.g. "BTC", "ETH", "XMR", "USDT-ERC20", "USDT-TRC20"

@@ -172,5 +172,14 @@ export const DEFAULT_RPC_CONFIG: Record<Blockchain, ChainRpcConfig> = {
     ],
     timeoutMs: 6000,
     maxRetries: 3
+  },
+  lightning: {
+    chain: 'lightning',
+    endpoints: (process.env.LIGHTNING_RPC_URLS?.split(',')) || [
+      'https://legend.lnbits.com/api/v1',
+      'https://api.getalby.com'
+    ],
+    timeoutMs: 5000,
+    maxRetries: 3
   }
 };

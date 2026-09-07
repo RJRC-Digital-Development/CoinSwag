@@ -43,7 +43,8 @@ export class MempoolEstimatorService {
     'cosmos': 0.005,        // Native ATOM
     'near': 0.001,          // Native NEAR
     'kaspa': 0.0001,        // Native KAS
-    'ton': 0.005            // Native TON
+    'ton': 0.005,           // Native TON
+    'lightning': 0.0000001  // ~10 sats off-chain routing (<$0.01)
   };
 
   constructor(

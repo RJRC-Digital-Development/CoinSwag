@@ -36,6 +36,23 @@ export const TOP_ASSETS: Asset[] = [
     explorerAddressUrl: 'https://mempool.space/address/'
   },
   {
+    id: 'BTC_LN',
+    symbol: 'BTC',
+    name: 'Bitcoin (Lightning Network)',
+    chain: 'lightning',
+    standard: 'lightning',
+    decimals: 8,
+    minDeposit: 0.00001,
+    maxDeposit: 0.5,
+    networkFeeAsset: 'BTC',
+    estimatedNetworkFee: 0.0000001,
+    confirmationsRequired: 0,
+    isPrivacyHub: false,
+    icon: 'https://cryptologos.cc/logos/lightning-network-lightning-logo.svg',
+    explorerTxUrl: 'https://mempool.space/lightning/',
+    explorerAddressUrl: 'https://mempool.space/lightning/'
+  },
+  {
     id: 'ETH',
     symbol: 'ETH',
     name: 'Ethereum',

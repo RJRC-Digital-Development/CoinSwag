@@ -11,7 +11,8 @@ import {
   Sparkles, 
   X,
   AlertTriangle,
-  QrCode
+  QrCode,
+  Zap
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -140,24 +141,32 @@ export const SwapStatusModal: React.FC<Props> = ({
             <div className="bg-[#121620] border border-[#262D3D] rounded-xl p-4 sm:p-5 space-y-4">
               <div className="flex items-center justify-between text-xs font-mono text-slate-400">
                 <span className="flex items-center space-x-1.5 text-amber-400 font-bold">
-                  <Clock className="w-3.5 h-3.5" />
-                  <span>Send Exact Amount To Single-Use Address</span>
+                  {order.quote.fromAsset.chain === 'lightning' ? <Zap className="w-3.5 h-3.5 text-amber-400" /> : <Clock className="w-3.5 h-3.5" />}
+                  <span>
+                    {order.quote.fromAsset.chain === 'lightning'
+                      ? 'Pay Exact Amount To Lightning Invoice'
+                      : 'Send Exact Amount To Single-Use Address'}
+                  </span>
                 </span>
-                <span>Confirmations: {order.depositConfirmations}/{order.requiredConfirmations}</span>
+                <span>
+                  {order.quote.fromAsset.chain === 'lightning'
+                    ? 'Instant 0-Conf'
+                    : `Confirmations: ${order.depositConfirmations}/${order.requiredConfirmations}`}
+                </span>
               </div>
 
               <div className="p-4 bg-[#0B0E14] border border-[#262D3D] rounded-xl flex flex-col sm:flex-row items-center gap-4">
                 {/* SVG QR Code */}
                 <div className="bg-white p-2.5 rounded-xl shadow-md flex flex-col items-center shrink-0">
                   <QRCodeSVG
-                    value={order.depositAddress}
+                    value={order.quote.fromAsset.chain === 'lightning' ? `lightning:${order.depositAddress}` : order.depositAddress}
                     size={110}
                     level="M"
                     includeMargin={false}
                   />
                   <div className="flex items-center space-x-1 mt-1 text-[9px] font-mono font-bold text-slate-800 uppercase tracking-wider">
                     <QrCode className="w-2.5 h-2.5" />
-                    <span>Scan Wallet</span>
+                    <span>{order.quote.fromAsset.chain === 'lightning' ? 'Scan Invoice' : 'Scan Wallet'}</span>
                   </div>
                 </div>
 
@@ -165,26 +174,35 @@ export const SwapStatusModal: React.FC<Props> = ({
                 <div className="flex-1 min-w-0 space-y-2 w-full text-left">
                   <div>
                     <span className="text-[10px] font-mono text-slate-500 block uppercase">
-                      {order.quote.fromAsset.name} Deposit Address
+                      {order.quote.fromAsset.chain === 'lightning' ? 'Lightning BOLT11 Invoice' : `${order.quote.fromAsset.name} Deposit Address`}
                     </span>
                     <span className="font-mono text-xs sm:text-sm text-slate-200 break-all select-all font-bold block mt-0.5">
                       {order.depositAddress}
                     </span>
                     {order.depositExtraId && (
                       <span className="text-xs text-amber-400 block mt-1 font-mono bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
-                        Destination Tag / Memo: <strong>{order.depositExtraId}</strong>
+                        {order.quote.fromAsset.chain === 'lightning' ? 'Payment Hash:' : 'Destination Tag / Memo:'} <strong>{order.depositExtraId}</strong>
                       </span>
                     )}
                   </div>
 
-                  <div className="flex items-center space-x-2 pt-1">
+                  <div className="flex items-center space-x-2 pt-1 flex-wrap gap-y-1">
                     <button
                       onClick={copyAddress}
                       className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-mono flex items-center space-x-1.5 transition"
                     >
                       {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                      <span>{copied ? 'Copied to Clipboard' : 'Copy Address'}</span>
+                      <span>{copied ? 'Copied to Clipboard' : (order.quote.fromAsset.chain === 'lightning' ? 'Copy Invoice' : 'Copy Address')}</span>
                     </button>
+                    {order.quote.fromAsset.chain === 'lightning' && (
+                      <a
+                        href={`lightning:${order.depositAddress}`}
+                        className="px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/30 rounded-lg text-xs font-mono flex items-center space-x-1 transition font-bold"
+                      >
+                        <Zap className="w-3.5 h-3.5" />
+                        <span>Open in Wallet</span>
+                      </a>
+                    )}
                     {order.anonymizationDelaySeconds > 0 && (
                       <span className="text-[11px] font-mono text-[#FF6600] bg-[#FF6600]/10 px-2 py-1 rounded border border-[#FF6600]/30 flex items-center space-x-1">
                         <Lock className="w-3 h-3" />
@@ -198,15 +216,25 @@ export const SwapStatusModal: React.FC<Props> = ({
               <div className="grid grid-cols-2 gap-3 text-xs font-mono">
                 <div className="p-2.5 rounded-lg bg-[#0B0E14] border border-[#262D3D]">
                   <span className="text-slate-500 text-[10px] uppercase block">Deposit Amount</span>
-                  <span className="text-white font-bold text-sm">
+                  <span className="text-white font-bold text-sm block">
                     {order.quote.amountIn} {order.quote.fromAsset.symbol}
                   </span>
+                  {order.quote.fromAsset.chain === 'lightning' && (
+                    <span className="text-[11px] text-amber-400 font-mono">
+                      ≈ {Math.round(order.quote.amountIn * 1e8).toLocaleString()} sats
+                    </span>
+                  )}
                 </div>
                 <div className="p-2.5 rounded-lg bg-[#0B0E14] border border-[#262D3D]">
                   <span className="text-slate-500 text-[10px] uppercase block">You Will Receive</span>
-                  <span className="text-emerald-400 font-bold text-sm">
+                  <span className="text-emerald-400 font-bold text-sm block">
                     {order.actualPayoutAmount || order.quote.estimatedAmountOut} {order.quote.toAsset.symbol}
                   </span>
+                  {order.quote.toAsset.chain === 'lightning' && (
+                    <span className="text-[11px] text-amber-400 font-mono">
+                      ≈ {Math.round((order.actualPayoutAmount || order.quote.estimatedAmountOut) * 1e8).toLocaleString()} sats
+                    </span>
+                  )}
                 </div>
               </div>
             </div>

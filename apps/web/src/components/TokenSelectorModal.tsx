@@ -105,6 +105,11 @@ export const TokenSelectorModal: React.FC<Props> = ({
                     <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
                       {token.chain}
                     </span>
+                    {token.chain === 'lightning' && (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/40">
+                        ⚡ 0-CONF
+                      </span>
+                    )}
                     {token.isPrivacyHub && (
                       <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#FF6600]/20 text-[#FF6600] border border-[#FF6600]/40">
                         HUB

@@ -1,6 +1,7 @@
 export * from './adapters/adapter.interface';
 export * from './adapters/monero.adapter';
 export * from './adapters/bitcoin.adapter';
+export * from './adapters/lightning.adapter';
 export * from './adapters/evm.adapter';
 export * from './adapters/solana.adapter';
 export * from './adapters/mock.adapter';

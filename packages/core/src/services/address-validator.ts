@@ -69,6 +69,14 @@ export class AddressValidator {
         // Starts with D, 34 chars
         return /^D{1}[5-9A-HJ-NP-U]{1}[1-9A-HJ-NP-Za-km-z]{32}$/.test(cleanAddress);
 
+      case 'lightning':
+        // BOLT11 invoice: starts with lnbc (mainnet), lntb (testnet), lnbcrt (regtest)
+        // LNURL: starts with lnurl1
+        // BOLT12: starts with lno1
+        // Lightning Address: username@domain.com
+        return /^(lnbc[0-9a-z]+|lntb[0-9a-z]+|lnbcrt[0-9a-z]+|lnurl1[0-9a-z]+|lno1[0-9a-z]+)$/i.test(cleanAddress) ||
+               /^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$/.test(cleanAddress);
+
       default:
         return cleanAddress.length >= 10;
     }
@@ -79,6 +87,8 @@ export class AddressValidator {
    */
   public static getSampleAddress(chain: Blockchain): string {
     switch (chain) {
+      case 'lightning':
+        return 'lnbc10u1pj8s092pp5qqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqypqdp82um59usxxck5xghhxccqzzsxqrrsssp50000000000000000000000000000000000000000000000000000';
       case 'monero':
         return '888tNkZrPN6JsEgekjMnABU4TBzc2Dt29EPAvkFxbANsAnJYPbb3iQ1YBRk1UXCDRSiKc9dhwMVgN5S9cQUiyoogDavup3H';
       case 'bitcoin':

@@ -7,6 +7,7 @@ export interface PriceTicker {
 // Baseline reference market prices (updated periodically or fetched from CoinGecko / Binance)
 export const DEFAULT_PRICES_USD: Record<string, number> = {
   'BTC': 92500.0,
+  'BTC_LN': 92500.0,
   'ETH': 3450.0,
   'XMR': 185.0,
   'SOL': 210.0,

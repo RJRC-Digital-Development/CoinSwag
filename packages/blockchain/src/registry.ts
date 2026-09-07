@@ -5,6 +5,7 @@ import { BitcoinAdapter } from './adapters/bitcoin.adapter';
 import { EvmAdapter } from './adapters/evm.adapter';
 import { SolanaAdapter } from './adapters/solana.adapter';
 import { GenericChainAdapter } from './adapters/mock.adapter';
+import { LightningAdapter } from './adapters/lightning.adapter';
 import { RpcFailoverManager } from './services/rpc-failover.service';
 
 export class BlockchainAdapterRegistry {
@@ -19,6 +20,7 @@ export class BlockchainAdapterRegistry {
   private registerDefaults(): void {
     const monero = new MoneroAdapter({ isSimulated: true }, this.failoverManager);
     const bitcoin = new BitcoinAdapter();
+    const lightning = new LightningAdapter();
     const ethereum = new EvmAdapter('ethereum');
     const bsc = new EvmAdapter('bsc');
     const polygon = new EvmAdapter('polygon');
@@ -38,6 +40,7 @@ export class BlockchainAdapterRegistry {
 
     this.adapters.set('monero', monero);
     this.adapters.set('bitcoin', bitcoin);
+    this.adapters.set('lightning', lightning);
     this.adapters.set('ethereum', ethereum);
     this.adapters.set('bsc', bsc);
     this.adapters.set('polygon', polygon);

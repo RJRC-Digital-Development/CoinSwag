@@ -246,11 +246,15 @@ export const SwapWidget: React.FC<Props> = ({ tokens, onOrderCreated }) => {
           {/* Destination Address */}
           <div>
             <label className="text-xs font-mono text-slate-300 block mb-1">
-              Your {toToken?.name || 'Destination'} Payout Address:
+              {toToken?.chain === 'lightning' 
+                ? 'Your Bitcoin Lightning Destination (Invoice or Address):' 
+                : `Your ${toToken?.name || 'Destination'} Payout Address:`}
             </label>
             <input
               type="text"
-              placeholder={`Enter recipient ${toToken?.symbol || ''} address`}
+              placeholder={toToken?.chain === 'lightning'
+                ? 'Enter BOLT11 invoice (lnbc...), LNURL, or name@domain.com'
+                : `Enter recipient ${toToken?.symbol || ''} address`}
               value={destinationAddress}
               onChange={(e) => setDestinationAddress(e.target.value)}
               className="w-full bg-[#0B0E14] border border-[#262D3D] rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-mono text-white placeholder-slate-600 focus:outline-none focus:border-[#FF6600] transition"
@@ -260,11 +264,15 @@ export const SwapWidget: React.FC<Props> = ({ tokens, onOrderCreated }) => {
           {/* Refund Address */}
           <div>
             <label className="text-xs font-mono text-slate-300 block mb-1">
-              Emergency {fromToken?.symbol || 'Source'} Refund Address:
+              {fromToken?.chain === 'lightning'
+                ? 'Emergency Lightning Refund Invoice / Address:'
+                : `Emergency ${fromToken?.symbol || 'Source'} Refund Address:`}
             </label>
             <input
               type="text"
-              placeholder={`Enter refund ${fromToken?.symbol || ''} address in case of failure`}
+              placeholder={fromToken?.chain === 'lightning'
+                ? 'Enter refund BOLT11 invoice or Lightning address (name@domain)'
+                : `Enter refund ${fromToken?.symbol || ''} address in case of failure`}
               value={refundAddress}
               onChange={(e) => setRefundAddress(e.target.value)}
               className="w-full bg-[#0B0E14] border border-[#262D3D] rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-mono text-white placeholder-slate-600 focus:outline-none focus:border-[#FF6600] transition"
