@@ -59,7 +59,10 @@ export const App: React.FC = () => {
       const endpoint = orderId.startsWith('split_')
         ? `/api/v1/splits/${orderId}/advance`
         : `/api/v1/swaps/${orderId}/advance`;
-      const res = await fetch(endpoint, { method: 'POST' });
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'x-secret-token': activeOrder?.secretToken || '' }
+      });
       const data = await res.json();
       if (data.order) {
         setActiveOrder(data.order);
@@ -73,7 +76,7 @@ export const App: React.FC = () => {
     try {
       await fetch(`/api/v1/swaps/${orderId}/auto-complete`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-secret-token': activeOrder?.secretToken || '' },
         body: JSON.stringify({ stepDelayMs: 650 })
       });
     } catch (err) {

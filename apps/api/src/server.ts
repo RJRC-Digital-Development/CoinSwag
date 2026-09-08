@@ -69,6 +69,9 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
   app.use(inputValidationMiddleware);
   app.use(globalRateLimit);
 
+  const hasOrderSecret = (order: { secretToken: string } | null, submitted: unknown): boolean =>
+    typeof submitted === 'string' && !!order && TimingSafeEqual.compare(order.secretToken, submitted);
+
   // Health check
   app.get('/health', (req: Request, res: Response) => {
     res.json({
@@ -205,6 +208,9 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
   // POST /api/v1/swaps/:id/advance - Advance one step (simulation / test trigger)
   app.post('/api/v1/swaps/:id/advance', orderRateLimit, async (req: Request, res: Response) => {
     try {
+      if (!hasOrderSecret(orderManager.getOrder(req.params.id), req.headers['x-secret-token'])) {
+        return res.status(401).json({ error: 'Order authorization required.' });
+      }
       const updated = await orderManager.advanceOrderStep(req.params.id);
       res.json({ order: updated });
     } catch {
@@ -215,6 +221,9 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
   // POST /api/v1/swaps/:id/auto-complete - Simulate entire swap execution
   app.post('/api/v1/swaps/:id/auto-complete', orderRateLimit, async (req: Request, res: Response) => {
     try {
+      if (!hasOrderSecret(orderManager.getOrder(req.params.id), req.headers['x-secret-token'])) {
+        return res.status(401).json({ error: 'Order authorization required.' });
+      }
       const delay = req.body.stepDelayMs || 700;
       orderManager.simulateFullSwap(req.params.id, delay);
       res.json({ message: 'Simulation initiated in background' });
@@ -314,6 +323,9 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
   // POST /api/v1/splits/:id/advance - Advance simulation step for split order
   app.post('/api/v1/splits/:id/advance', orderRateLimit, async (req: Request, res: Response) => {
     try {
+      if (!hasOrderSecret(orderManager.getSplitOrder(req.params.id), req.headers['x-secret-token'])) {
+        return res.status(401).json({ error: 'Order authorization required.' });
+      }
       const updated = await orderManager.advanceSplitOrderStep(req.params.id);
       res.json({ order: updated });
     } catch {

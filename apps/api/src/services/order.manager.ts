@@ -27,6 +27,7 @@ import {
 } from '@coinswag/liquidity';
 import { TimeReleaseManager } from './time-release.manager';
 import { TimingSafeEqual } from '../security/timing-safe';
+import crypto from 'node:crypto';
 
 export class OrderManager {
   private orders: Map<string, SwapOrder> = new Map();
@@ -149,9 +150,9 @@ export class OrderManager {
     }
 
     const adapter = this.registry.getAdapter(quote.fromAsset.chain);
-    const orderId = `swap_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    const orderId = `swap_${crypto.randomUUID()}`;
     const depositInfo = await adapter.generateDepositAddress(orderId);
-    const secretToken = `sec_${Math.random().toString(36).substring(2, 16)}`;
+    const secretToken = `sec_${crypto.randomBytes(32).toString('base64url')}`;
 
     const order: SwapOrder = {
       id: orderId,
@@ -336,9 +337,9 @@ export class OrderManager {
     }
 
     const adapter = this.registry.getAdapter(quote.fromAsset.chain);
-    const orderId = `split_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    const orderId = `split_${crypto.randomUUID()}`;
     const depositInfo = await adapter.generateDepositAddress(orderId);
-    const secretToken = `sec_${Math.random().toString(36).substring(2, 16)}`;
+    const secretToken = `sec_${crypto.randomBytes(32).toString('base64url')}`;
 
     const order: SplitOrder = {
       id: orderId,
