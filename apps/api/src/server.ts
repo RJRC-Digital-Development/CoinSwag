@@ -1,5 +1,7 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
+import path from 'path';
+import fs from 'fs';
 import { TOP_ASSETS, CreateSplitQuoteRequest } from '@coinswag/core';
 import { OrderManager } from './services/order.manager';
 import {
@@ -405,6 +407,32 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
     rateLimiterSentinel.resetJail(req.body?.ip);
     res.json({ message: req.body?.ip ? `IP ${req.body.ip} unbanned` : 'All rate-limiter jails reset' });
   });
+
+  // Serve static web frontend if apps/web/dist exists (Unified single-process architecture)
+  const possibleDistPaths = [
+    path.resolve(__dirname, '../../web/dist'),
+    path.resolve(process.cwd(), 'apps/web/dist'),
+    path.resolve(__dirname, '../web/dist')
+  ];
+
+  const webDistPath = possibleDistPaths.find(p => fs.existsSync(p));
+  if (webDistPath) {
+    app.use(express.static(webDistPath, {
+      maxAge: '1d',
+      setHeaders: (res, filePath) => {
+        if (filePath.endsWith('.html')) {
+          res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        }
+      }
+    }));
+
+    app.get('*', (req: Request, res: Response) => {
+      if (req.path.startsWith('/api/') || req.path === '/health') {
+        return res.status(404).json({ error: 'Endpoint not found' });
+      }
+      res.sendFile(path.join(webDistPath, 'index.html'));
+    });
+  }
 
   return { app, orderManager };
 }
