@@ -120,8 +120,8 @@ async function runFeeSweeperTests() {
   assert(stats.pendingBufferUsd > 0 && stats.pendingBufferUsd < 100, 'Pending buffer accumulated');
   console.log(`  ✔ Small trade fee buffered ($${stats.pendingBufferUsd.toFixed(2)} / $100 threshold) without triggering on-chain gas`);
 
-  // Trade 2: Larger trade ($85 fee) -> Total buffer now > $100 -> Should trigger automatic sweep!
-  const largerOrder = createMockOrder('BTC', 'ETH', 0.125, 0.0075); // ~ $86 USD
+  // Trade 2: Larger trade -> Total buffer now > $100 -> Should trigger automatic sweep!
+  const largerOrder = createMockOrder('BTC', 'ETH', 0.20, 0.0075); // ~ $118 USD at $79k
   const sweep2 = await batchSweeper.recordFee(largerOrder);
 
   assert(sweep2 !== null, 'Must trigger automatic sweep when threshold crossed');

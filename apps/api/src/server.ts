@@ -11,7 +11,8 @@ import {
   quoteRateLimit,
   orderRateLimit,
   keyVaultRateLimit,
-  rateLimiterSentinel
+  rateLimiterSentinel,
+  adminAuthMiddleware
 } from './security';
 
 export function createServer(orderManager: OrderManager = new OrderManager()) {
@@ -343,7 +344,7 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
   });
 
   // POST /api/v1/fees/sweep-now - 1-click manual trigger to sweep all buffers to external wallets
-  app.post('/api/v1/fees/sweep-now', async (req: Request, res: Response) => {
+  app.post('/api/v1/fees/sweep-now', adminAuthMiddleware, async (req: Request, res: Response) => {
     try {
       const sweptTransactions = await orderManager.getFeeSweeper().sweepAllBuffers();
       res.json({
@@ -356,7 +357,7 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
   });
 
   // POST /api/v1/admin/janitor - Manually invoke Zero-KYC data shredder
-  app.post('/api/v1/admin/janitor', (req: Request, res: Response) => {
+  app.post('/api/v1/admin/janitor', adminAuthMiddleware, (req: Request, res: Response) => {
     const purgedCount = orderManager.runZeroKycJanitor();
     res.json({ message: `Zero-KYC Janitor executed. Purged ${purgedCount} orders.` });
   });
@@ -384,7 +385,7 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
   });
 
   // POST /api/v1/sentinel/trip - Operator emergency kill switch
-  app.post('/api/v1/sentinel/trip', (req: Request, res: Response) => {
+  app.post('/api/v1/sentinel/trip', adminAuthMiddleware, (req: Request, res: Response) => {
     const reason = req.body.reason || 'Manual operator emergency engagement';
     orderManager.getCircuitBreaker().trip(reason);
     res.json({
@@ -394,7 +395,7 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
   });
 
   // POST /api/v1/sentinel/reset - Operator manual resumption switch
-  app.post('/api/v1/sentinel/reset', (req: Request, res: Response) => {
+  app.post('/api/v1/sentinel/reset', adminAuthMiddleware, (req: Request, res: Response) => {
     orderManager.getCircuitBreaker().reset();
     res.json({
       message: '🛡️ Financial Circuit Breaker safely reset. Outflows resumed in CLOSED state.',
@@ -403,7 +404,7 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
   });
 
   // POST /api/v1/sentinel/reset-jail - Operator manual unban
-  app.post('/api/v1/sentinel/reset-jail', (req: Request, res: Response) => {
+  app.post('/api/v1/sentinel/reset-jail', adminAuthMiddleware, (req: Request, res: Response) => {
     rateLimiterSentinel.resetJail(req.body?.ip);
     res.json({ message: req.body?.ip ? `IP ${req.body.ip} unbanned` : 'All rate-limiter jails reset' });
   });
