@@ -3,14 +3,12 @@ import {
   Layers,
   Plus,
   Trash2,
-  Key,
   Clock,
   ShieldCheck,
   ChevronDown,
   AlertCircle,
   CheckCircle,
   HelpCircle,
-  Sparkles,
   Lock
 } from 'lucide-react';
 import { TokenItem, TokenSelectorModal } from './TokenSelectorModal';
@@ -44,7 +42,6 @@ export const SplitSwapWidget: React.FC<Props> = ({ tokens, onSplitOrderCreated }
   const [amountIn, setAmountIn] = useState<string>('1.0');
   const [refundAddress, setRefundAddress] = useState<string>('');
 
-  const [autoGenerateKeys, setAutoGenerateKeys] = useState<boolean>(false);
   const [destinations, setDestinations] = useState<SplitItem[]>([]);
 
   const [quote, setQuote] = useState<any | null>(null);
@@ -86,10 +83,7 @@ export const SplitSwapWidget: React.FC<Props> = ({ tokens, onSplitOrderCreated }
   const addressCount = destinations.length;
   let activeFeePercent = 0.05;
   let activeFeeTierLabel = '5% (Up to 3 Addresses)';
-  if (autoGenerateKeys || addressCount > 50) {
-    activeFeePercent = 0.33;
-    activeFeeTierLabel = '33% (Keygen / Unlimited)';
-  } else if (addressCount <= 3) {
+  if (addressCount <= 3) {
     activeFeePercent = 0.05;
     activeFeeTierLabel = '5% (Up to 3 Addresses)';
   } else if (addressCount <= 10) {
@@ -117,13 +111,13 @@ export const SplitSwapWidget: React.FC<Props> = ({ tokens, onSplitOrderCreated }
         const payload = {
           fromAssetId: fromToken.id,
           amountIn: num,
-          autoGenerateKeys,
+          autoGenerateKeys: false,
           destinations: destinations.map(d => ({
             assetId: d.token.id,
-            address: autoGenerateKeys ? '' : d.address,
+            address: d.address,
             percentage: d.percentage,
             releaseDelaySeconds: d.releaseDelaySeconds,
-            generateKeypair: autoGenerateKeys
+            generateKeypair: false
           }))
         };
 
@@ -148,12 +142,9 @@ export const SplitSwapWidget: React.FC<Props> = ({ tokens, onSplitOrderCreated }
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [fromToken, amountIn, destinations, autoGenerateKeys]);
+  }, [fromToken, amountIn, destinations]);
 
   const handleAddDestination = () => {
-    if (destinations.length >= 50 && !autoGenerateKeys) {
-      // Prompt keygen or add
-    }
     const defaultToken = tokens.find(t => t.symbol === 'XMR') || tokens[0];
     const newDest: SplitItem = {
       id: Math.random().toString(36).substring(2, 7),
@@ -189,12 +180,10 @@ export const SplitSwapWidget: React.FC<Props> = ({ tokens, onSplitOrderCreated }
       return;
     }
 
-    if (!autoGenerateKeys) {
-      for (let i = 0; i < destinations.length; i++) {
-        if (!destinations[i].address.trim()) {
-          setQuoteError(`Please provide a payout destination address for destination #${i + 1}`);
-          return;
-        }
+    for (let i = 0; i < destinations.length; i++) {
+      if (!destinations[i].address.trim()) {
+        setQuoteError(`Please provide a payout destination address for destination #${i + 1}`);
+        return;
       }
     }
 
@@ -288,35 +277,6 @@ export const SplitSwapWidget: React.FC<Props> = ({ tokens, onSplitOrderCreated }
         </div>
       </div>
 
-      {/* Keygen Mode Banner & Toggle */}
-      <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30 rounded-2xl p-3.5 flex items-center justify-between gap-3">
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
-            <Key className="w-4 h-4" />
-          </div>
-          <div>
-            <div className="text-xs font-bold text-white flex items-center gap-1.5">
-              Automated Private Key Generation
-              <span className="text-[10px] bg-amber-500/20 text-amber-300 font-mono px-1.5 py-0.5 rounded">
-                33% Tier
-              </span>
-            </div>
-            <div className="text-[11px] text-slate-400">
-              CoinSwag generates fresh unspent keypairs for all addresses. You download the encrypted Paper Key Vault.
-            </div>
-          </div>
-        </div>
-
-        <label className="relative inline-flex items-center cursor-pointer shrink-0">
-          <input
-            type="checkbox"
-            checked={autoGenerateKeys}
-            onChange={(e) => setAutoGenerateKeys(e.target.checked)}
-            className="sr-only peer"
-          />
-          <div className="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
-        </label>
-      </div>
 
       {/* Destinations Section Header */}
       <div className="space-y-3">
@@ -406,13 +366,7 @@ export const SplitSwapWidget: React.FC<Props> = ({ tokens, onSplitOrderCreated }
 
                 {/* Row 2: Address Field (or Auto-Generated Badge) */}
                 <div>
-                  {autoGenerateKeys ? (
-                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl px-3 py-2 text-xs font-mono text-amber-300 flex items-center gap-2">
-                      <Key className="w-3.5 h-3.5 text-amber-400" />
-                      <span>Single-use unspent keypair will be generated automatically.</span>
-                    </div>
-                  ) : (
-                    <input
+                  <input
                       type="text"
                       value={dest.address}
                       onChange={(e) => {
@@ -424,7 +378,6 @@ export const SplitSwapWidget: React.FC<Props> = ({ tokens, onSplitOrderCreated }
                       placeholder={`Enter ${dest.token.name} destination address...`}
                       className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs font-mono text-white placeholder-slate-600 focus:outline-none focus:border-[#FF6600]"
                     />
-                  )}
                 </div>
 
                 {/* Row 3: Time-Release Hold Duration Selector */}

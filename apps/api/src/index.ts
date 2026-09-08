@@ -7,7 +7,7 @@ app.listen(PORT, () => {
   console.log(`=======================================================`);
   console.log(`🚀 CoinSwag Swap Engine Online`);
   console.log(`🔒 Monero Privacy Hub: Active (Hop 1 -> XMR -> Hop 2)`);
-  console.log(`🛡️  KYC Policy: Strictly Zero-KYC (Ephemeral Sessions)`);
+  console.log(`🛡️  Privacy: Monero-routed swaps with ephemeral sessions`);
   console.log(`🌐 Server listening on http://localhost:${PORT}`);
   console.log(`=======================================================`);
 });

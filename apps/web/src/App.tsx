@@ -96,7 +96,7 @@ export const App: React.FC = () => {
         <div className="text-center space-y-4 max-w-3xl mx-auto">
           <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-[#FF6600]/10 border border-[#FF6600]/30 text-[#FF6600] text-xs font-mono font-bold tracking-[0.12em] shadow-lg shadow-orange-950/30">
             <Shield className="w-3.5 h-3.5" />
-            <span>THE ZERO-KYC MONERO PRIVACY HUB</span>
+            <span>MONERO-ROUTED MULTI-CHAIN SWAPS</span>
           </div>
 
           <h1 className="text-4xl sm:text-6xl font-black text-white tracking-[-0.045em] leading-[0.98]">
@@ -171,9 +171,9 @@ export const App: React.FC = () => {
             <div className="w-10 h-10 rounded-xl bg-[#FF6600]/10 text-[#FF6600] flex items-center justify-center">
               <Lock className="w-5 h-5" />
             </div>
-            <h3 className="font-bold text-white text-base">Strictly Zero-KYC</h3>
+            <h3 className="font-bold text-white text-base">Monero Routing Layer</h3>
             <p className="text-xs text-slate-400 leading-relaxed font-sans">
-              No registration, no accounts, no KYC verification. Ephemeral order sessions and auto-purging data shredder keep your activity anonymous.
+              Route eligible assets through a Monero conversion leg with ephemeral order sessions and automatic metadata cleanup.
             </p>
           </div>
 
@@ -247,7 +247,7 @@ export const App: React.FC = () => {
             <span className="underline decoration-slate-700 underline-offset-4">Blockchain Risk Disclosures</span>
           </button>
           <span className="text-slate-700">•</span>
-          <span className="font-mono text-[11px] text-emerald-400/80">Strictly Zero-KYC • No Data Retention</span>
+          <span className="font-mono text-[11px] text-emerald-400/80">Monero-Routed • Ephemeral Order Data</span>
         </div>
         <p className="text-[11px] text-slate-600 font-mono">
           CoinSwag is open-source algorithmic routing software. Software operators do not hold custody of funds.

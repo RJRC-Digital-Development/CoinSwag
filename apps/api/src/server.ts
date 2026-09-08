@@ -79,7 +79,7 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
       service: 'CoinSwag Crypto Swap Automator',
       hub: 'Monero (XMR) Zero-Knowledge Privacy Hub',
       features: ['Single-Hop', 'Double-Hop', 'Address-Splitting', 'Time-Release-Hold', 'Keypair-Generation'],
-      kyc: 'STRICTLY_NO_KYC',
+      routing: 'MONERO_PRIVACY_HUB',
       timestamp: Date.now()
     });
   });
@@ -100,7 +100,7 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
       protocol: 'CoinSwag Non-Custodial Autonomous Crypto Routing Protocol',
       lastUpdated: 'September 2026',
       custody: 'NON_CUSTODIAL',
-      kycPolicy: 'ZERO_KYC_NO_LOGS',
+      privacyArchitecture: 'EPHEMERAL_ORDER_DATA',
       summary: 'CoinSwag is an open, autonomous non-custodial software protocol. All blockchain transactions are final and irreversible. Users maintain 100% unilateral custody and responsibility for their cryptographic keys, transactions, and legal compliance.',
       keyDisclosures: [
         'Non-custodial: CoinSwag never holds, manages, or custodies private keys or user funds.',
@@ -174,7 +174,7 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
   app.get('/api/v1/swaps/:id', (req: Request, res: Response) => {
     const order = orderManager.getOrder(req.params.id);
     if (!order) {
-      return res.status(404).json({ error: 'Order not found or purged under Zero-KYC policy' });
+      return res.status(404).json({ error: 'Order not found or purged under the data-retention policy' });
     }
     res.json({ order });
   });
@@ -245,6 +245,9 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
           error: 'Missing required parameters: fromAssetId, amountIn, destinations (array)'
         });
       }
+      if (autoGenerateKeys) {
+        return res.status(400).json({ error: 'Automated wallet generation is not available. Provide destination addresses for every split.' });
+      }
 
       const numAmount = Number(amountIn);
       if (!Number.isFinite(numAmount) || numAmount <= 0) {
@@ -255,7 +258,7 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
         fromAssetId,
         amountIn: numAmount,
         destinations,
-        autoGenerateKeys: Boolean(autoGenerateKeys)
+        autoGenerateKeys: false
       };
 
       const quote = orderManager.createSplitQuote(quoteRequest);
@@ -284,7 +287,7 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
   app.get('/api/v1/splits/:id', (req: Request, res: Response) => {
     const order = orderManager.getSplitOrder(req.params.id);
     if (!order) {
-      return res.status(404).json({ error: 'Split order not found or purged under Zero-KYC policy' });
+      return res.status(404).json({ error: 'Split order not found or purged under the data-retention policy' });
     }
     res.json({ order });
   });
@@ -431,7 +434,7 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
   // POST /api/v1/admin/janitor - Manually invoke Zero-KYC data shredder
   app.post('/api/v1/admin/janitor', adminAuthMiddleware, (req: Request, res: Response) => {
     const purgedCount = orderManager.runZeroKycJanitor();
-    res.json({ message: `Zero-KYC Janitor executed. Purged ${purgedCount} orders.` });
+    res.json({ message: `Data-retention janitor executed. Purged ${purgedCount} orders.` });
   });
 
   // ============================================================================

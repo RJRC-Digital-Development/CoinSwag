@@ -136,7 +136,7 @@ export const SplitStatusModal: React.FC<Props> = ({ order, onClose, onAdvanceSte
                   <Key className="w-5 h-5" />
                 </div>
                 <div>
-                  <div className="text-xs font-bold text-white">Generated Zero-KYC Key Vault Ready</div>
+                  <div className="text-xs font-bold text-white">Generated Key Vault Ready</div>
                   <div className="text-[11px] text-slate-400">
                     Download and save your private keys and seed phrases offline before closing.
                   </div>

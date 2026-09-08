@@ -1,7 +1,7 @@
 {
   "name": "@coinswag/bot",
   "version": "1.0.0",
-  "description": "Zero-KYC Telegram Bot for CoinSwag Monero Privacy Swaps",
+  "description": "Telegram bot for CoinSwag Monero-routed swaps",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {

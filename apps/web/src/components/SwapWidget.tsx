@@ -137,7 +137,7 @@ export const SwapWidget: React.FC<Props> = ({ tokens, onOrderCreated }) => {
           <div className="flex items-center space-x-2">
             <span className="text-xl font-black text-white tracking-tight">Instant Swap</span>
             <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded-full bg-[#FF6600]/15 text-[#FF6600] border border-[#FF6600]/30">
-              No KYC
+              Monero Route
             </span>
           </div>
 
@@ -381,7 +381,7 @@ export const SwapWidget: React.FC<Props> = ({ tokens, onOrderCreated }) => {
           ) : (
             <>
               <Zap className="w-5 h-5 fill-white" />
-              <span>SWAP NOW • ZERO KYC</span>
+              <span>START MONERO ROUTE</span>
             </>
           )}
         </button>

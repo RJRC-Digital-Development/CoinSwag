@@ -1,4 +1,4 @@
-# CoinSwag: Automated Zero-KYC Multi-Chain Swap Automator
+# CoinSwag: Monero-Routed Multi-Chain Swap Engine
 
 > **Privacy Pivot Architecture**: Every transaction (`Coin A -> Coin B`) is cryptographically filtered through **Monero (XMR)** as the central privacy hub to completely break blockchain graph traceability.
 
@@ -14,10 +14,10 @@
    - **Single-Hop Swaps**: **0.45%** flat fee (beats FixedFloat 0.50% float rate and MajesticBank 0.50%).
    - **Double-Hop Privacy Swaps**: **0.75% all-in** (0.375% per leg), undercutting privacy aggregators that charge 1.0% to 1.8% for multi-hop swaps.
    - Dynamic real-time network/miner fee pass-through.
-3. **Strictly Zero-KYC**:
+3. **Ephemeral Order Data**:
    - No user registration, no accounts, no cookies, no tracking.
    - Ephemeral swap sessions identified by single-use order tokens.
-   - Integrated **Zero-KYC Janitor** that permanently scrubs and shreds transaction metadata post-settlement.
+   - Integrated data-retention janitor that permanently scrubs transaction metadata post-settlement.
 4. **Phase 1 Top 10+ Native Blockchains & Tokens**:
    - **BTC**: Bitcoin Native (Native SegWit Bech32 & Taproot)
    - **ETH**: Ethereum Native

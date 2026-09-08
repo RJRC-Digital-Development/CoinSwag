@@ -30,7 +30,7 @@ export async function createTelegramBot(token?: string): Promise<{ bot: Telegram
 // Auto-start when executed directly
 if (require.main === module) {
   createTelegramBot().then(({ bot }) => {
-    console.log('[CoinSwagBot] Initializing Zero-KYC Telegram Swapping Daemon...');
+    console.log('[CoinSwagBot] Initializing Monero-routed swap bot...');
     bot.startPolling();
   });
 }

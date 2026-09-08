@@ -152,7 +152,7 @@ export const LegalDisclaimerModal: React.FC<LegalDisclaimerModalProps> = ({ isOp
               <section className="space-y-2">
                 <h3 className="text-sm font-bold text-white uppercase tracking-wider">4. Keypair Generation & Data Shredding</h3>
                 <p>
-                  When selecting automatic key generation, keys are produced in ephemeral memory using cryptographically secure random entropy. In accordance with strict Zero-KYC principles, private keys are never stored on persistent disk storage. You must download and save your encrypted AES-256-GCM vault immediately. Once an order settles, memory is purged via 3-pass DoD zeroization.
+                  When selecting automatic key generation, keys are produced in ephemeral memory using cryptographically secure random entropy. Private keys are never stored on persistent disk storage. You must download and save your encrypted AES-256-GCM vault immediately. Once an order settles, memory is purged via 3-pass zeroization.
                 </p>
               </section>
 

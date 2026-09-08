@@ -222,7 +222,7 @@ export const OperatorDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
         headers: { 'x-admin-key': adminKey }
       });
       const data = await res.json();
-      setActionMessage(data.message || 'Zero-KYC Janitor executed successfully');
+      setActionMessage(data.message || 'Data-retention janitor executed successfully');
       await fetchData();
     } catch (err: any) {
       setActionMessage('Janitor failed: ' + err.message);
@@ -616,7 +616,7 @@ export const OperatorDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                     <div>
                       <h4 className="text-sm font-bold text-white flex items-center space-x-2">
                         <Trash2 className="w-4 h-4 text-amber-400" />
-                        <span>Zero-KYC Janitor Memory Scrubber</span>
+                        <span>Data-Retention Janitor</span>
                       </h4>
                       <p className="text-xs text-slate-400 mt-0.5 font-sans">
                         Forces an immediate 3-pass DoD memory wipe on all expired swap sessions and temporary keypairs.
@@ -708,7 +708,7 @@ export const OperatorDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
         <div className="p-4 border-t border-[#262D3D] bg-[#0A0D14] flex items-center justify-between text-[11px] font-mono text-slate-500">
           <div className="flex items-center space-x-2">
             <Lock className="w-3.5 h-3.5 text-[#FF6600]" />
-            <span>Automatic Node Failover & Zero-KYC Janitor Active</span>
+            <span>Automatic Node Failover & Data-Retention Janitor Active</span>
           </div>
           <button
             onClick={onClose}

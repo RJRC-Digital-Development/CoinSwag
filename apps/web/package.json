@@ -2,7 +2,7 @@
   "name": "@coinswag/web",
   "version": "1.0.0",
   "type": "module",
-  "description": "CoinSwag Modern Web Interface for Zero-KYC Multi-Chain Swaps",
+  "description": "CoinSwag web interface for Monero-routed multi-chain swaps",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

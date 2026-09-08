@@ -24,7 +24,7 @@ export const Navbar: React.FC<Props> = ({ onOpenOperatorDrawer, onOpenLegalModal
                 XMR Hub
               </span>
             </div>
-            <p className="text-xs text-slate-400 font-mono hidden sm:block">Automated Zero-KYC Multi-Chain Swap</p>
+            <p className="text-xs text-slate-400 font-mono hidden sm:block">Monero-Routed Multi-Chain Swaps</p>
           </div>
         </div>
 
@@ -32,7 +32,7 @@ export const Navbar: React.FC<Props> = ({ onOpenOperatorDrawer, onOpenLegalModal
         <div className="flex items-center space-x-2 sm:space-x-3">
           <div className="hidden sm:flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-medium">
             <Lock className="w-3.5 h-3.5" />
-            <span>Strictly Zero-KYC</span>
+            <span>Monero Routed</span>
           </div>
 
           {/* Legal / Non-Custodial Disclaimer Button */}
