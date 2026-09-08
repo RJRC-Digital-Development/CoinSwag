@@ -17,9 +17,27 @@ import {
 
 export function createServer(orderManager: OrderManager = new OrderManager()) {
   const app = express();
+  app.set('trust proxy', 1);
   app.disable('x-powered-by');
   app.use(securityHeadersMiddleware);
-  app.use(cors());
+
+  const allowedOrigins = process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(',').map(s => s.trim())
+    : null;
+
+  app.use(
+    cors({
+      origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+        if (!allowedOrigins || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+          return callback(null, true);
+        }
+        return callback(new Error('CORS origin blocked by security policy'));
+      },
+      methods: ['GET', 'POST', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-key', 'x-secret-token', 'x-vault-passphrase']
+    })
+  );
   app.use(
     express.json({
       limit: '1mb',
@@ -180,7 +198,7 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
   });
 
   // POST /api/v1/swaps/:id/advance - Advance one step (simulation / test trigger)
-  app.post('/api/v1/swaps/:id/advance', async (req: Request, res: Response) => {
+  app.post('/api/v1/swaps/:id/advance', orderRateLimit, async (req: Request, res: Response) => {
     try {
       const updated = await orderManager.advanceOrderStep(req.params.id);
       res.json({ order: updated });
@@ -190,7 +208,7 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
   });
 
   // POST /api/v1/swaps/:id/auto-complete - Simulate entire swap execution
-  app.post('/api/v1/swaps/:id/auto-complete', async (req: Request, res: Response) => {
+  app.post('/api/v1/swaps/:id/auto-complete', orderRateLimit, async (req: Request, res: Response) => {
     try {
       const delay = req.body.stepDelayMs || 700;
       orderManager.simulateFullSwap(req.params.id, delay);
@@ -287,7 +305,7 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
   });
 
   // POST /api/v1/splits/:id/advance - Advance simulation step for split order
-  app.post('/api/v1/splits/:id/advance', async (req: Request, res: Response) => {
+  app.post('/api/v1/splits/:id/advance', orderRateLimit, async (req: Request, res: Response) => {
     try {
       const updated = await orderManager.advanceSplitOrderStep(req.params.id);
       res.json({ order: updated });
@@ -297,7 +315,7 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
   });
 
   // POST /api/v1/splits/:id/release-early - Early payout trigger for specific tranche
-  app.post('/api/v1/splits/:id/release-early', async (req: Request, res: Response) => {
+  app.post('/api/v1/splits/:id/release-early', orderRateLimit, async (req: Request, res: Response) => {
     try {
       const { destinationId, secretToken } = req.body;
       if (!destinationId || !secretToken) {
@@ -333,8 +351,8 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
     }
   });
 
-  // GET /api/v1/fees/stats - Operator revenue & fee sweeper status
-  app.get('/api/v1/fees/stats', (req: Request, res: Response) => {
+  // GET /api/v1/fees/stats - Operator revenue & fee sweeper status (Restricted to Operator)
+  app.get('/api/v1/fees/stats', adminAuthMiddleware, (req: Request, res: Response) => {
     try {
       const stats = orderManager.getFeeSweeper().getStats();
       res.json({ stats });
