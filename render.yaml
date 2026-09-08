@@ -3,8 +3,12 @@ services:
     name: coinswag
     runtime: node
     plan: free
+    autoDeploy: true
+    healthCheckPath: /health
     buildCommand: npm run build
     startCommand: node server-prod.js
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: 10000

@@ -46,5 +46,8 @@
     "solana"
   ],
   "author": "CoinSwag Team",
-  "license": "MIT"
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  }
 }
