@@ -7,7 +7,7 @@ import { SplitStatusModal } from './components/SplitStatusModal';
 import { OperatorDrawer } from './components/OperatorDrawer';
 import { LegalDisclaimerModal } from './components/LegalDisclaimerModal';
 import { TokenItem } from './components/TokenSelectorModal';
-import { Shield, Lock, Zap, RefreshCw, Layers, Clock, Scale } from 'lucide-react';
+import { Shield, Lock, Zap, RefreshCw, Layers, Clock, Scale, ArrowDownToLine, Route } from 'lucide-react';
 
 export const App: React.FC = () => {
   const [tokens, setTokens] = useState<TokenItem[]>([]);
@@ -82,35 +82,40 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-between">
+    <div className="min-h-screen flex flex-col justify-between relative overflow-hidden">
       <Navbar
         onOpenOperatorDrawer={() => setIsOperatorOpen(true)}
         onOpenLegalModal={() => setIsLegalOpen(true)}
       />
 
-      <main className="flex-1 max-w-6xl mx-auto px-4 py-8 sm:py-12 w-full space-y-10">
+      <main className="flex-1 max-w-6xl mx-auto px-4 py-8 sm:py-14 w-full space-y-10 relative">
         {/* Hero Section */}
-        <div className="text-center space-y-3 max-w-2xl mx-auto">
-          <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-[#FF6600]/10 border border-[#FF6600]/30 text-[#FF6600] text-xs font-mono font-bold tracking-wide">
+        <div className="text-center space-y-4 max-w-3xl mx-auto">
+          <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-[#FF6600]/10 border border-[#FF6600]/30 text-[#FF6600] text-xs font-mono font-bold tracking-[0.12em] shadow-lg shadow-orange-950/30">
             <Shield className="w-3.5 h-3.5" />
             <span>THE ZERO-KYC MONERO PRIVACY HUB</span>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight">
+          <h1 className="text-4xl sm:text-6xl font-black text-white tracking-[-0.045em] leading-[0.98]">
             Swap Any Coin. <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF6600] via-amber-400 to-emerald-400">
               Filtered Through Monero.
             </span>
           </h1>
 
-          <p className="text-sm sm:text-base text-slate-400 max-w-xl mx-auto font-sans">
+          <p className="text-sm sm:text-base text-slate-400 max-w-xl mx-auto font-sans leading-relaxed">
             Every transaction routes through Monero’s RingCT zero-knowledge hub to cryptographically break ledger traceability between sender and receiver.
           </p>
+          <div className="flex flex-wrap justify-center gap-2 pt-1 text-[11px] font-mono text-slate-400">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-700/70 bg-slate-900/70 px-3 py-1.5"><Route className="h-3 w-3 text-emerald-400" /> Multi-chain routes</span>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-700/70 bg-slate-900/70 px-3 py-1.5"><Shield className="h-3 w-3 text-amber-400" /> Non-custodial design</span>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-700/70 bg-slate-900/70 px-3 py-1.5"><ArrowDownToLine className="h-3 w-3 text-orange-400" /> No account required</span>
+          </div>
         </div>
 
         {/* Mode Selector Tabs */}
         <div className="flex justify-center">
-          <div className="bg-slate-900/90 border border-slate-800 p-1 rounded-2xl inline-flex space-x-1 shadow-lg">
+          <div className="bg-slate-950/80 border border-slate-700/80 p-1 rounded-2xl inline-flex space-x-1 shadow-2xl shadow-black/30">
             <button
               type="button"
               onClick={() => setSwapMode('single')}
@@ -159,7 +164,7 @@ export const App: React.FC = () => {
 
         {/* Feature Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-8 border-t border-[#262D3D]/60">
-          <div className="p-5 rounded-2xl bg-[#121620] border border-[#262D3D] space-y-2">
+          <div className="p-5 rounded-2xl bg-[#121620]/85 border border-[#262D3D] space-y-2 transition duration-300 hover:-translate-y-1 hover:border-orange-500/40 hover:shadow-xl hover:shadow-orange-950/20">
             <div className="w-10 h-10 rounded-xl bg-[#FF6600]/10 text-[#FF6600] flex items-center justify-center">
               <Lock className="w-5 h-5" />
             </div>
@@ -169,7 +174,7 @@ export const App: React.FC = () => {
             </p>
           </div>
 
-          <div className="p-5 rounded-2xl bg-[#121620] border border-[#262D3D] space-y-2">
+          <div className="p-5 rounded-2xl bg-[#121620]/85 border border-[#262D3D] space-y-2 transition duration-300 hover:-translate-y-1 hover:border-amber-500/40 hover:shadow-xl hover:shadow-amber-950/20">
             <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center">
               <Clock className="w-5 h-5" />
             </div>
@@ -179,7 +184,7 @@ export const App: React.FC = () => {
             </p>
           </div>
 
-          <div className="p-5 rounded-2xl bg-[#121620] border border-[#262D3D] space-y-2">
+          <div className="p-5 rounded-2xl bg-[#121620]/85 border border-[#262D3D] space-y-2 transition duration-300 hover:-translate-y-1 hover:border-emerald-500/40 hover:shadow-xl hover:shadow-emerald-950/20">
             <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
               <Layers className="w-5 h-5" />
             </div>

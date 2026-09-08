@@ -8,18 +8,18 @@ interface Props {
 
 export const Navbar: React.FC<Props> = ({ onOpenOperatorDrawer, onOpenLegalModal }) => {
   return (
-    <nav className="w-full border-b border-[#262D3D] bg-[#0E131E]/80 backdrop-blur-md sticky top-0 z-40 px-4 lg:px-8 py-3.5">
+    <nav className="w-full border-b border-slate-700/60 bg-[#0a0d14]/80 backdrop-blur-xl sticky top-0 z-40 px-4 lg:px-8 py-3.5 shadow-lg shadow-black/10">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Brand */}
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#FF6600] to-amber-500 p-0.5 shadow-lg shadow-orange-500/20 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#FF6600] via-orange-400 to-amber-300 p-0.5 shadow-lg shadow-orange-500/30 flex items-center justify-center">
             <div className="w-full h-full bg-[#151922] rounded-[10px] flex items-center justify-center">
               <span className="font-extrabold text-xl text-[#FF6600]">⚡</span>
             </div>
           </div>
           <div>
             <div className="flex items-center space-x-2">
-              <span className="text-xl font-black tracking-tight text-white">COIN<span className="text-[#FF6600]">SWAG</span></span>
+              <span className="text-xl font-black tracking-[-0.05em] text-white">COIN<span className="text-[#FF6600]">SWAG</span></span>
               <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-[#FF6600]/10 text-[#FF6600] border border-[#FF6600]/30">
                 XMR Hub
               </span>
@@ -62,4 +62,3 @@ export const Navbar: React.FC<Props> = ({ onOpenOperatorDrawer, onOpenLegalModal
     </nav>
   );
 };
-
