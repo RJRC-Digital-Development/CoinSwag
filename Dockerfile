@@ -38,6 +38,10 @@ COPY --from=builder /app/packages ./packages
 COPY --from=builder /app/apps ./apps
 COPY --from=builder /app/server-prod.js ./server-prod.js
 
+# The process never needs root privileges at runtime.
+RUN chown -R node:node /app
+USER node
+
 EXPOSE 5173 3001
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \

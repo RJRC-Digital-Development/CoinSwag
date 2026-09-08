@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { TimingSafeEqual } from './timing-safe';
+import { rateLimiterSentinel } from './rate-limiter';
 
 /**
  * Admin / Operator Authentication Middleware.
@@ -30,6 +31,7 @@ export function adminAuthMiddleware(req: Request, res: Response, next: NextFunct
   }
 
   if (!token || !TimingSafeEqual.compare(token, adminKey)) {
+    rateLimiterSentinel.recordSecurityFailure(rateLimiterSentinel.getClientIp(req));
     res.status(401).json({
       error: 'Unauthorized: Valid Admin API Key required for operator controls',
       code: 'ADMIN_AUTH_REQUIRED'

@@ -34,16 +34,10 @@ export class RateLimiter {
    * Safely extracts and validates the client's IP address.
    */
   public getClientIp(req: Request): string {
-    const forwarded = req.headers['x-forwarded-for'];
-    let rawIp: string;
-
-    if (typeof forwarded === 'string') {
-      rawIp = forwarded.split(',')[0].trim();
-    } else if (Array.isArray(forwarded) && forwarded.length > 0) {
-      rawIp = forwarded[0].trim();
-    } else {
-      rawIp = req.socket?.remoteAddress || req.ip || '127.0.0.1';
-    }
+    // Express only derives req.ip from X-Forwarded-For when its proxy trust
+    // policy permits it. Reading that header here directly would let any client
+    // choose a new IP address and bypass the rate limiter.
+    const rawIp = req.ip || req.socket?.remoteAddress || '127.0.0.1';
 
     // Strip IPv6 prefix for localhost if present
     if (rawIp === '::1' || rawIp === '::ffff:127.0.0.1') {

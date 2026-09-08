@@ -16,7 +16,7 @@ export function securityHeadersMiddleware(req: Request, res: Response, next: Nex
   // Strict Content Security Policy
   res.setHeader(
     'Content-Security-Policy',
-    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' *; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self';"
+    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"
   );
 
   // Strict-Transport-Security (HSTS: 2 years, subdomains, preloaded)
@@ -34,6 +34,7 @@ export function securityHeadersMiddleware(req: Request, res: Response, next: Nex
   // Cross-Origin Isolation
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
   res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+  res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
 
   // Disable DNS prefetching
   res.setHeader('X-DNS-Prefetch-Control', 'off');

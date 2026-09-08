@@ -18,25 +18,32 @@ import {
 
 export function createServer(orderManager: OrderManager = new OrderManager()) {
   const app = express();
-  app.set('trust proxy', 1);
+  // Do not trust forwarding headers unless the deployment explicitly has a
+  // trusted reverse proxy. This prevents attacker-controlled X-Forwarded-For
+  // values from bypassing IP-based defenses.
+  app.set('trust proxy', process.env.TRUST_PROXY === 'true' ? 1 : false);
   app.disable('x-powered-by');
   app.use(securityHeadersMiddleware);
 
-  const allowedOrigins = process.env.CORS_ORIGIN
-    ? process.env.CORS_ORIGIN.split(',').map(s => s.trim())
-    : null;
+  const allowedOrigins = new Set(
+    (process.env.CORS_ORIGIN || '')
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean)
+  );
 
   app.use(
     cors({
       origin: (origin, callback) => {
         if (!origin) return callback(null, true);
-        if (!allowedOrigins || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+        if (allowedOrigins.has(origin)) {
           return callback(null, true);
         }
         return callback(new Error('CORS origin blocked by security policy'));
       },
       methods: ['GET', 'POST', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-key', 'x-secret-token', 'x-vault-passphrase']
+      allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-key', 'x-secret-token', 'x-vault-passphrase'],
+      maxAge: 600
     })
   );
   app.use(
@@ -54,10 +61,7 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
   // Catch body-parser and reviver syntax/pollution errors
   app.use((err: any, req: Request, res: Response, next: any) => {
     if (err) {
-      return res.status(400).json({
-        error: 'Malicious payload rejected (Anti-Tampering Sentinel)',
-        reason: err.message
-      });
+      return res.status(400).json({ error: 'Request rejected by input security policy.' });
     }
     next();
   });
@@ -120,15 +124,15 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
         return res.status(400).json({ error: 'Missing required fields: fromAssetId, toAssetId, amountIn' });
       }
 
-      const numAmount = parseFloat(amountIn);
-      if (isNaN(numAmount) || numAmount <= 0) {
+      const numAmount = Number(amountIn);
+      if (!Number.isFinite(numAmount) || numAmount <= 0) {
         return res.status(400).json({ error: 'Invalid amountIn' });
       }
 
       const quote = orderManager.createQuote(fromAssetId, toAssetId, numAmount, rateType || 'FLOAT');
       res.json({ quote });
-    } catch (err: any) {
-      res.status(400).json({ error: err.message });
+    } catch {
+      res.status(400).json({ error: 'Unable to create quote. Check the submitted parameters.' });
     }
   });
 
@@ -158,8 +162,8 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
       );
 
       res.status(201).json({ order });
-    } catch (err: any) {
-      res.status(400).json({ error: err.message });
+    } catch {
+      res.status(400).json({ error: 'Unable to create swap. Check the submitted parameters.' });
     }
   });
 
@@ -203,8 +207,8 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
     try {
       const updated = await orderManager.advanceOrderStep(req.params.id);
       res.json({ order: updated });
-    } catch (err: any) {
-      res.status(400).json({ error: err.message });
+    } catch {
+      res.status(400).json({ error: 'Unable to advance swap.' });
     }
   });
 
@@ -214,8 +218,8 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
       const delay = req.body.stepDelayMs || 700;
       orderManager.simulateFullSwap(req.params.id, delay);
       res.json({ message: 'Simulation initiated in background' });
-    } catch (err: any) {
-      res.status(400).json({ error: err.message });
+    } catch {
+      res.status(400).json({ error: 'Unable to start swap simulation.' });
     }
   });
 
@@ -233,8 +237,8 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
         });
       }
 
-      const numAmount = parseFloat(amountIn);
-      if (isNaN(numAmount) || numAmount <= 0) {
+      const numAmount = Number(amountIn);
+      if (!Number.isFinite(numAmount) || numAmount <= 0) {
         return res.status(400).json({ error: 'Invalid amountIn' });
       }
 
@@ -247,8 +251,8 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
 
       const quote = orderManager.createSplitQuote(quoteRequest);
       res.json({ quote });
-    } catch (err: any) {
-      res.status(400).json({ error: err.message });
+    } catch {
+      res.status(400).json({ error: 'Unable to create split quote. Check the submitted parameters.' });
     }
   });
 
@@ -262,8 +266,8 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
 
       const order = await orderManager.createSplitOrder(quoteId, refundAddress);
       res.status(201).json({ order });
-    } catch (err: any) {
-      res.status(400).json({ error: err.message });
+    } catch {
+      res.status(400).json({ error: 'Unable to create split order. Check the submitted parameters.' });
     }
   });
 
@@ -280,8 +284,10 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
   app.get('/api/v1/splits/:id/keys', keyVaultRateLimit, (req: Request, res: Response) => {
     const clientIp = rateLimiterSentinel.getClientIp(req);
     try {
-      const secretToken = (req.query.secretToken as string) || (req.headers['x-secret-token'] as string);
-      const passphrase = (req.query.passphrase as string) || (req.headers['x-vault-passphrase'] as string);
+      // Secrets in URLs routinely end up in browser history, reverse-proxy
+      // logs, telemetry, and referrer headers. Headers keep them out of URLs.
+      const secretToken = req.headers['x-secret-token'] as string;
+      const passphrase = req.headers['x-vault-passphrase'] as string;
 
       if (!secretToken) {
         rateLimiterSentinel.recordSecurityFailure(clientIp);
@@ -293,9 +299,9 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
       res.setHeader('Content-Disposition', `attachment; filename="coinswag-keyvault-${req.params.id}.json"`);
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
       res.json(exportData);
-    } catch (err: any) {
+    } catch {
       rateLimiterSentinel.recordSecurityFailure(clientIp);
-      res.status(400).json({ error: err.message });
+      res.status(401).json({ error: 'Key-vault authorization failed.' });
     }
   });
 
@@ -310,8 +316,8 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
     try {
       const updated = await orderManager.advanceSplitOrderStep(req.params.id);
       res.json({ order: updated });
-    } catch (err: any) {
-      res.status(400).json({ error: err.message });
+    } catch {
+      res.status(400).json({ error: 'Unable to advance split order.' });
     }
   });
 
@@ -347,8 +353,8 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
         healthyCount: statuses.filter(s => s.isHealthy).length,
         nodes: statuses
       });
-    } catch (err: any) {
-      res.status(500).json({ error: err.message });
+    } catch {
+      res.status(500).json({ error: 'Unable to retrieve node status.' });
     }
   });
 
@@ -357,8 +363,8 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
     try {
       const stats = orderManager.getFeeSweeper().getStats();
       res.json({ stats });
-    } catch (err: any) {
-      res.status(500).json({ error: err.message });
+    } catch {
+      res.status(500).json({ error: 'Unable to retrieve fee statistics.' });
     }
   });
 
@@ -370,8 +376,8 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
         message: `Manual sweep completed for ${sweptTransactions.length} pending buffers`,
         swept: sweptTransactions
       });
-    } catch (err: any) {
-      res.status(500).json({ error: err.message });
+    } catch {
+      res.status(500).json({ error: 'Fee sweep failed.' });
     }
   });
 
@@ -481,7 +487,9 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
       }
     }));
 
-    app.get('*', (req: Request, res: Response) => {
+    // A terminal middleware keeps SPA fallback compatible with Express 5's
+    // stricter route-pattern parser while preserving API 404s.
+    app.use((req: Request, res: Response) => {
       if (req.path.startsWith('/api/') || req.path === '/health') {
         return res.status(404).json({ error: 'Endpoint not found' });
       }

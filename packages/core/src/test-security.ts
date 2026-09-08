@@ -67,7 +67,7 @@ const encryptedVault = KeypairGeneratorService.formatEncryptedKeyVaultExport(
 
 assert(encryptedVault.algorithm === 'aes-256-gcm', 'Cipher algorithm is authenticated aes-256-gcm');
 assert(encryptedVault.kdf === 'pbkdf2-sha256', 'Key derivation function is pbkdf2-sha256');
-assert(encryptedVault.iterations === 100000, 'Iterations enforced at 100,000');
+assert(encryptedVault.iterations === 600000, 'Iterations enforced at 600,000');
 assert(typeof encryptedVault.ciphertext === 'string' && encryptedVault.ciphertext.length > 50, 'Ciphertext generated');
 assert(typeof encryptedVault.authTag === 'string' && encryptedVault.authTag.length === 32, '128-bit authentication tag generated');
 assert(typeof encryptedVault.checksum === 'string' && encryptedVault.checksum.length === 64, 'HMAC-SHA256 checksum generated');

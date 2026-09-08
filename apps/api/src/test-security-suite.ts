@@ -59,7 +59,7 @@ async function runSecuritySuite() {
     });
     assert.strictEqual(protoRes.status, 400);
     const protoData: any = await protoRes.json();
-    assert(protoData.error.includes('Anti-Tampering Sentinel'));
+    assert(protoData.error.includes('input security policy'));
     reportPass('Malicious __proto__ prototype pollution strictly rejected with HTTP 400');
 
     // Attempt constructor pollution
@@ -142,7 +142,7 @@ async function runSecuritySuite() {
       const res = await fetch(`${baseUrl}/api/v1/splits/split_fake_order/keys?secretToken=invalid_guess_${i}`, {
         headers: { 'X-Forwarded-For': jailTestIp }
       });
-      assert.strictEqual(res.status, 400); // 400 order not found or 401 unauthorized
+      assert.strictEqual(res.status, 401);
     }
 
     // 6th attempt should now be blocked by the intrusion jail (HTTP 403)
@@ -153,6 +153,11 @@ async function runSecuritySuite() {
     const jailedData: any = await jailedRes.json();
     assert(jailedData.error.includes('temporarily banned due to suspected brute-force'));
     reportPass('Anti-Brute-Force Sentinel automatically jailed attacking IP with HTTP 403');
+
+    // The suite uses one local test client; clear its simulated jail before
+    // exercising unrelated authenticated flows.
+    rateLimiterSentinel.resetLimits();
+    rateLimiterSentinel.resetJail();
 
     // -------------------------------------------------------------------------
     // 5. Encrypted Key Vault Download & Decryption Verification
@@ -192,7 +197,8 @@ async function runSecuritySuite() {
     // Download with AES-256-GCM encryption passphrase
     const userPassphrase = 'CorrectHorseBatteryStaple#99!';
     const vaultRes = await fetch(
-      `${baseUrl}/api/v1/splits/${splitOrder.id}/keys?secretToken=${splitOrder.secretToken}&passphrase=${encodeURIComponent(userPassphrase)}`
+      `${baseUrl}/api/v1/splits/${splitOrder.id}/keys`,
+      { headers: { 'x-secret-token': splitOrder.secretToken, 'x-vault-passphrase': userPassphrase } }
     );
     assert.strictEqual(vaultRes.status, 200);
     assert.strictEqual(vaultRes.headers.get('cache-control'), 'no-store, no-cache, must-revalidate, proxy-revalidate');
@@ -200,8 +206,8 @@ async function runSecuritySuite() {
 
     const vaultBundle: any = await vaultRes.json();
     assert.strictEqual(vaultBundle.algorithm, 'aes-256-gcm');
-    assert.strictEqual(vaultBundle.iterations, 100000);
-    reportPass('Key Vault exported in authenticated AES-256-GCM format (100,000 PBKDF2 iterations)');
+    assert.strictEqual(vaultBundle.iterations, 600000);
+    reportPass('Key Vault exported in authenticated AES-256-GCM format (600,000 PBKDF2 iterations)');
 
     // Decrypt and verify payload
     const decryptedPayload = VaultCipher.decryptVault(vaultBundle, userPassphrase);

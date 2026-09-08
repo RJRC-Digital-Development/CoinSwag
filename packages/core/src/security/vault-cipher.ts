@@ -2,7 +2,7 @@ import * as crypto from 'crypto';
 import { MemoryScrubber } from './memory-scrubber';
 
 export interface EncryptedVaultBundle {
-  version: number;
+  version: 2;
   algorithm: 'aes-256-gcm';
   kdf: 'pbkdf2-sha256';
   iterations: number;
@@ -15,15 +15,16 @@ export interface EncryptedVaultBundle {
 }
 
 export class VaultCipher {
-  public static readonly ITERATIONS = 100000;
+  // OWASP's current PBKDF2-HMAC-SHA256 guidance is 600,000 iterations.
+  public static readonly ITERATIONS = 600000;
   public static readonly KEY_LEN = 32; // 256 bits
 
   /**
    * Encrypts arbitrary vault data with authenticated AES-256-GCM.
    */
   public static encryptVault(data: any, passphrase: string): EncryptedVaultBundle {
-    if (!passphrase || passphrase.length < 8) {
-      throw new Error('Encryption passphrase must be at least 8 characters long.');
+    if (!passphrase || passphrase.length < 12) {
+      throw new Error('Encryption passphrase must be at least 12 characters long.');
     }
 
     const salt = crypto.randomBytes(16);
@@ -48,7 +49,7 @@ export class VaultCipher {
       const checksum = hmac.digest('hex');
 
       return {
-        version: 1,
+        version: 2,
         algorithm: 'aes-256-gcm',
         kdf: 'pbkdf2-sha256',
         iterations: this.ITERATIONS,
@@ -70,7 +71,7 @@ export class VaultCipher {
    * Throws if passphrase is wrong or if any bit of ciphertext / tag has been tampered with.
    */
   public static decryptVault(bundle: EncryptedVaultBundle, passphrase: string): any {
-    if (bundle.algorithm !== 'aes-256-gcm') {
+    if (!bundle || bundle.version !== 2 || bundle.algorithm !== 'aes-256-gcm' || bundle.kdf !== 'pbkdf2-sha256' || bundle.iterations !== this.ITERATIONS) {
       throw new Error(`Unsupported cipher algorithm: ${bundle.algorithm}`);
     }
 
@@ -78,6 +79,10 @@ export class VaultCipher {
     const iv = Buffer.from(bundle.iv, 'hex');
     const authTag = Buffer.from(bundle.authTag, 'hex');
     const ciphertext = Buffer.from(bundle.ciphertext, 'hex');
+
+    if (salt.length !== 16 || iv.length !== 12 || authTag.length !== 16 || ciphertext.length === 0 || !/^[a-f\d]{64}$/i.test(bundle.checksum)) {
+      throw new Error('Invalid vault bundle encoding.');
+    }
 
     const key = crypto.pbkdf2Sync(passphrase, salt, bundle.iterations || this.ITERATIONS, this.KEY_LEN, 'sha256');
 
