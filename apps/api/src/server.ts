@@ -12,7 +12,8 @@ import {
   orderRateLimit,
   keyVaultRateLimit,
   rateLimiterSentinel,
-  adminAuthMiddleware
+  adminAuthMiddleware,
+  TimingSafeEqual
 } from './security';
 
 export function createServer(orderManager: OrderManager = new OrderManager()) {
@@ -372,6 +373,41 @@ export function createServer(orderManager: OrderManager = new OrderManager()) {
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
+  });
+
+  // POST /api/v1/admin/login - Authenticate operator session and verify ADMIN_API_KEY
+  app.post('/api/v1/admin/login', (req: Request, res: Response) => {
+    const clientIp = rateLimiterSentinel.getClientIp(req);
+    const adminKey = process.env.ADMIN_API_KEY || process.env.OPERATOR_SECRET;
+
+    if (!adminKey) {
+      return res.status(503).json({
+        error: 'Operator console unavailable: ADMIN_API_KEY is not configured in server environment variables.',
+        code: 'ADMIN_KEY_NOT_CONFIGURED'
+      });
+    }
+
+    const submittedKey = req.body?.apiKey || req.headers['x-admin-key'];
+    if (!submittedKey || typeof submittedKey !== 'string') {
+      rateLimiterSentinel.recordSecurityFailure(clientIp);
+      return res.status(400).json({ error: 'Missing apiKey parameter' });
+    }
+
+    if (!TimingSafeEqual.compare(submittedKey, adminKey)) {
+      const isJailed = rateLimiterSentinel.recordSecurityFailure(clientIp);
+      return res.status(401).json({
+        error: isJailed
+          ? 'Too many failed login attempts. IP address has been temporarily banned by Anti-Intrusion Sentinel.'
+          : 'Invalid Admin API Key',
+        code: 'INVALID_CREDENTIALS'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Operator session authenticated successfully',
+      authenticatedAt: Date.now()
+    });
   });
 
   // POST /api/v1/admin/janitor - Manually invoke Zero-KYC data shredder
