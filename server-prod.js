@@ -16,7 +16,7 @@ apiProcess.on('error', err => {
 });
 
 // 2. Start Web Frontend & Reverse Proxy
-const webProcess = fork(path.join(__dirname, 'apps/web/prod-server.js'), [], {
+const webProcess = fork(path.join(__dirname, 'apps/web/prod-server.cjs'), [], {
   env: { ...process.env, PORT: PORT, API_PORT: API_PORT }
 });
 
