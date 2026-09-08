@@ -187,7 +187,7 @@ export const SplitStatusModal: React.FC<Props> = ({ order, onClose, onAdvanceSte
 
               <div className="text-[11px] text-slate-500 font-mono flex items-center justify-between">
                 <span>Confirmations: {order.depositConfirmations} / {order.requiredConfirmations}</span>
-                <span>Filtered via Monero Privacy Hub</span>
+                <span>Routed through Monero conversion leg</span>
               </div>
             </div>
           )}
@@ -215,8 +215,8 @@ export const SplitStatusModal: React.FC<Props> = ({ order, onClose, onAdvanceSte
                   : 'bg-slate-950 border-slate-800 text-slate-500'
               }`}
             >
-              <div className="font-bold">2. Anonymize</div>
-              <div className="text-[10px]">Monero RingCT Hub</div>
+              <div className="font-bold">2. Convert</div>
+              <div className="text-[10px]">Monero Routing Leg</div>
             </div>
 
             <div

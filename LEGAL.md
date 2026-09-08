@@ -22,7 +22,7 @@ PLEASE READ THIS LEGAL DISCLAIMER, RISK DISCLOSURE, AND TERMS OF SERVICE ("TERMS
 
 ### 3. Address Splitting, Time-Release Vaults & Keypair Generation
 3.1. **Client-Side / Ephemeral Key Generation**: When you utilize the address splitting engine with automated keypair generation, all cryptographic keypairs and mnemonic recovery seeds are generated ephemerally in volatile memory.  
-3.2. **Zero-Persistence & No Server Backups**: In strict adherence to our Zero-KYC architecture, CoinSwag **does not persist, store, log, or backup private keys, mnemonics, or user passphrases on any disk, database, or server storage**.  
+3.2. **Zero-Persistence & No Server Backups**: CoinSwag **does not persist, store, log, or backup private keys, mnemonics, or user passphrases on any disk, database, or server storage**.
 3.3. **User Custody Obligation**: You are solely responsible for immediately downloading, securely backing up, and safeguarding your paper key vault or AES-256-GCM encrypted vault bundle.  
 3.4. **Automated Memory Shredding**: Completed, settled, or expired order records in volatile memory are permanently zeroized using a 3-pass DoD cryptographic wipe after a 10-minute time-to-live (TTL). If you fail to record or download your keys before memory shredding, your assets will be permanently inaccessible.
 

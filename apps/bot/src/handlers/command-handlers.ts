@@ -40,9 +40,9 @@ export class BotCommandHandler {
   public async handleStart(msg: TelegramMessage): Promise<OutgoingReply> {
     const text = 
 `⚡ *Welcome to CoinSwag Bot*
-*Zero-KYC Multi-Chain Crypto Swaps*
+*Monero-Routed Multi-Chain Swaps*
 
-🔒 *Every swap is filtered through the Monero (XMR) Privacy Hub* (\`Coin A ➔ XMR ➔ Coin B\`) to cryptographically break sender and receiver linkability!
+🔒 *Eligible routes use Monero (XMR) as a conversion leg* (\`Coin A ➔ XMR ➔ Coin B\`). Use the service only in accordance with applicable law and the platform terms.
 
 ⚡ *Bitcoin Lightning Network:* Instant 0-conf settlement with sub-cent routing fees!
 
@@ -55,7 +55,7 @@ export class BotCommandHandler {
 • \`/quote <from> <to> <amount>\` — Calculate rates & fees
 • \`/rates\` — View supported tokens & prices
 • \`/track <order_id>\` — Monitor swap progress
-• \`/help\` — Zero-KYC privacy guarantee`;
+• \`/help\` — Routing and compliance information`;
 
     const replyMarkup = {
       inline_keyboard: [

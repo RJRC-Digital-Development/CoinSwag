@@ -15,11 +15,11 @@ export const PrivacyDiagram: React.FC<Props> = ({ fromSymbol, toSymbol, isDouble
 
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-2">
-          <EyeOff className="w-4 h-4 text-[#FF6600]" />
-          <h4 className="text-sm font-bold text-white tracking-wide">Monero Privacy Hub Architecture</h4>
+          <Network className="w-4 h-4 text-[#FF6600]" />
+          <h4 className="text-sm font-bold text-white tracking-wide">Monero Routing Architecture</h4>
         </div>
         <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-          Unlinkable On-Chain
+          Route Overview
         </span>
       </div>
 
@@ -45,7 +45,7 @@ export const PrivacyDiagram: React.FC<Props> = ({ fromSymbol, toSymbol, isDouble
             <div className="flex items-center justify-between text-xs text-[#FF6600] font-bold mb-1">
               <span className="flex items-center space-x-1">
                 <Lock className="w-3 h-3" />
-                <span>Zero-Knowledge Pivot</span>
+              <span>Monero Conversion Leg</span>
               </span>
               <span className="font-mono text-[10px] bg-[#FF6600]/20 px-1.5 py-0.5 rounded">XMR Hub</span>
             </div>
@@ -53,16 +53,16 @@ export const PrivacyDiagram: React.FC<Props> = ({ fromSymbol, toSymbol, isDouble
               <div className="w-7 h-7 rounded-full bg-[#FF6600] text-black flex items-center justify-center font-black text-xs">
                 XMR
               </div>
-              <span className="text-sm font-bold text-white">RingCT & Stealth Hop</span>
+              <span className="text-sm font-bold text-white">Monero Routing Leg</span>
             </div>
-            <p className="text-[11px] text-orange-200/70">Cryptographically severs input & output transaction graphs.</p>
+            <p className="text-[11px] text-orange-200/70">Conversion through the Monero network as part of the selected route.</p>
           </div>
 
           {/* Phase 3: Outbound Public Chain */}
           <div className="p-3 rounded-xl bg-[#151922] border border-[#262D3D] flex flex-col justify-between">
             <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
               <span>Leg 2: Outbound</span>
-              <span className="text-emerald-400 font-mono">Clean Payout</span>
+              <span className="text-emerald-400 font-mono">Destination Network</span>
             </div>
             <div className="flex items-center space-x-2 my-1.5">
               <div className="w-7 h-7 rounded-full bg-slate-800 flex items-center justify-center font-bold text-xs text-white">
@@ -70,7 +70,7 @@ export const PrivacyDiagram: React.FC<Props> = ({ fromSymbol, toSymbol, isDouble
               </div>
               <span className="text-sm font-semibold text-slate-200">Deliver {toSymbol}</span>
             </div>
-            <p className="text-[11px] text-slate-500">Delivered directly to user destination without prior trace.</p>
+            <p className="text-[11px] text-slate-500">Delivered to the destination address supplied by the user.</p>
           </div>
         </div>
       ) : (
@@ -80,7 +80,7 @@ export const PrivacyDiagram: React.FC<Props> = ({ fromSymbol, toSymbol, isDouble
               XMR
             </div>
             <div>
-              <p className="text-sm font-bold text-white">Single-Hop Direct Privacy Swap</p>
+              <p className="text-sm font-bold text-white">Single-Hop Monero Route</p>
               <p className="text-xs text-slate-400">Directly converting between Monero and {fromSymbol === 'XMR' ? toSymbol : fromSymbol}.</p>
             </div>
           </div>
@@ -90,11 +90,11 @@ export const PrivacyDiagram: React.FC<Props> = ({ fromSymbol, toSymbol, isDouble
         </div>
       )}
 
-      {/* Zero KYC Footer Info */}
+      {/* Data-handling summary */}
       <div className="mt-3 pt-3 border-t border-[#262D3D]/50 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400 font-mono">
         <span className="flex items-center space-x-1.5">
           <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-          <span>Zero User Logs • Ephemeral Sessions</span>
+          <span>Ephemeral Order Sessions</span>
         </span>
         <span className="text-slate-500">Auto-purged post settlement</span>
       </div>

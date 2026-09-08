@@ -107,7 +107,7 @@ export const App: React.FC = () => {
           </h1>
 
           <p className="text-sm sm:text-base text-slate-400 max-w-xl mx-auto font-sans leading-relaxed">
-            Every transaction routes through Monero’s RingCT zero-knowledge hub to cryptographically break ledger traceability between sender and receiver.
+            Route supported assets through a Monero conversion leg with transparent quotes, user-controlled destination addresses, and non-custodial settlement.
           </p>
           <div className="flex flex-wrap justify-center gap-2 pt-1 text-[11px] font-mono text-slate-400">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-700/70 bg-slate-900/70 px-3 py-1.5"><Route className="h-3 w-3 text-emerald-400" /> Multi-chain routes</span>
@@ -183,7 +183,7 @@ export const App: React.FC = () => {
             </div>
             <h3 className="font-bold text-white text-base">Time-Release Vaults</h3>
             <p className="text-xs text-slate-400 leading-relaxed font-sans">
-              Split output across unlimited addresses with scheduled release dates up to 30 days. Optional zero-knowledge private key generation for paper vault backups.
+              Split output across destination addresses with scheduled release dates up to 30 days and clear routing details.
             </p>
           </div>
 

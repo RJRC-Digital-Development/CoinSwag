@@ -1,14 +1,14 @@
 # CoinSwag: Monero-Routed Multi-Chain Swap Engine
 
-> **Privacy Pivot Architecture**: Every transaction (`Coin A -> Coin B`) is cryptographically filtered through **Monero (XMR)** as the central privacy hub to completely break blockchain graph traceability.
+> **Monero Routing Architecture**: Eligible cross-chain routes use **Monero (XMR)** as an intermediate conversion leg, subject to applicable law and the platform’s terms.
 
 ---
 
 ## ⚡ Key Features
 
-1. **Monero Zero-Knowledge Privacy Hub**:
+1. **Monero Routing Layer**:
    - **Cross-Chain Decoupling**: For public-to-public swaps (e.g. `BTC -> SOL`), CoinSwag automatically routes through Monero (`BTC -> XMR -> SOL`).
-   - Monero's native ring signatures, RingCT (Confidential Transactions), and stealth addresses render the transaction completely untraceable between the depositor of Coin A and the recipient of Coin B.
+   - Routes use Monero’s native protocol features as part of the conversion flow; no claim of anonymity or untraceability is made.
    - If the swap starts or ends with Monero (`XMR -> Coin B` or `Coin A -> XMR`), the engine skips the redundant leg and executes directly.
 2. **Competitive Pricing & Fee Engine**:
    - **Single-Hop Swaps**: **0.45%** flat fee (beats FixedFloat 0.50% float rate and MajesticBank 0.50%).

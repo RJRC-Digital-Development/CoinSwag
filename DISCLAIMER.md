@@ -13,7 +13,7 @@ CoinSwag is strictly open-source, non-custodial cryptographic software.
 
 ---
 
-## 2. Zero-KYC & Privacy Architecture
+## 2. Data Handling & Routing Architecture
 CoinSwag is architected from inception to preserve user cryptographic privacy:
 - The platform does not request, collect, store, transmit, or monetize any Personally Identifiable Information (PII), email addresses, physical locations, phone numbers, or identity documents.
 - The software enforces an in-memory ephemeral operational model: transient swap session state and address allocations are governed by strict Time-To-Live (TTL) expiration schedules (10 minutes) and are permanently overwritten via 3-pass DoD 5220.22-M cryptographic memory scrubbers upon completion.

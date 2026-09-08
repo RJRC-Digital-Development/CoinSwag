@@ -279,13 +279,13 @@ export const SwapWidget: React.FC<Props> = ({ tokens, onOrderCreated }) => {
             />
           </div>
 
-          {/* Anti-Timing Stealth Delay Slider (Privacy Enhancement) */}
+          {/* Optional settlement scheduling */}
           <div className="pt-2 pb-1 border-t border-[#262D3D]/50">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center space-x-1.5">
                 <Lock className="w-3.5 h-3.5 text-[#FF6600]" />
                 <span className="text-xs font-mono font-bold text-slate-200">
-                  Anti-Timing Stealth Delay
+                  Settlement Schedule
                 </span>
               </div>
               <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded ${
@@ -293,7 +293,7 @@ export const SwapWidget: React.FC<Props> = ({ tokens, onOrderCreated }) => {
                   ? 'bg-slate-800 text-slate-400'
                   : 'bg-[#FF6600]/20 text-[#FF6600] border border-[#FF6600]/30 animate-pulse'
               }`}>
-                {anonymizationDelay === 0 ? 'Instant (0m)' : `+${Math.round(anonymizationDelay / 60)} min stealth delay`}
+                {anonymizationDelay === 0 ? 'Immediate' : `${Math.round(anonymizationDelay / 60)} min scheduled release`}
               </span>
             </div>
 
@@ -350,11 +350,11 @@ export const SwapWidget: React.FC<Props> = ({ tokens, onOrderCreated }) => {
             <p className="text-[11px] text-slate-400 mt-2 font-sans leading-relaxed">
               {anonymizationDelay > 0 ? (
                 <span className="text-[#FF6600]/90">
-                  🛡️ <strong>Anti-Analysis Mode:</strong> Monero Hub introduces randomized churn & hold delays before dispatching Leg 2 to completely defeat AI timing-clustering attacks.
+                  <strong>Scheduled settlement:</strong> Dispatch is delayed by the selected interval.
                 </span>
               ) : (
                 <span>
-                  ⚡ <strong>Instant Mode:</strong> Immediate broadcast to recipient as soon as deposit confirms.
+                  <strong>Standard settlement:</strong> Dispatch begins after the required deposit confirmations.
                 </span>
               )}
             </p>
