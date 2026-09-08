@@ -24,6 +24,26 @@ webProcess.on('error', err => {
   console.error('[Web Process Error]:', err);
 });
 
+// 3. Automated Free-Tier Anti-Sleep Keep-Alive
+// If deployed on Render or any host with idle sleep, self-pings /health every 10 mins
+const keepAliveUrl = process.env.KEEP_ALIVE_URL || process.env.RENDER_EXTERNAL_URL;
+if (keepAliveUrl) {
+  const https = require('https');
+  const http = require('http');
+  const client = keepAliveUrl.startsWith('https') ? https : http;
+  const targetUrl = keepAliveUrl.endsWith('/') ? `${keepAliveUrl}health` : `${keepAliveUrl}/health`;
+
+  console.log(`⏱️ [Keep-Alive Sentinel] Active. Auto-pinging ${targetUrl} every 10 minutes to prevent container sleep.`);
+  setInterval(() => {
+    client.get(targetUrl, res => {
+      // Consume response data to free memory
+      res.resume();
+    }).on('error', err => {
+      // Non-critical, ignore transient network drops
+    });
+  }, 10 * 60 * 1000); // 10 minutes
+}
+
 function shutdown() {
   console.log('🛑 [CoinSwag Gateway] Shutting down services gracefully...');
   apiProcess.kill();
